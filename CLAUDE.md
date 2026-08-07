@@ -20,6 +20,14 @@ Predict per-study probability of **12 knee findings** from multi-sequence knee M
 | **Oct 22** | **Final submission deadline** |
 | Nov 5 | Winners' code/video deadline |
 
+## Data — measured facts (EDA 2026-08-07)
+
+- **4,407 training studies, 24,371 series** (~5–6 series/study, median 30 slices/series); test ≈ 1,300 studies. Full bundle 265 GB.
+- **Only 58 studies human-labeled** (all-or-nothing: 58 have all 12 labels, rest have none) — the sole ground-truth anchor for validating report extraction.
+- Report languages (langdetect): en 1736, es 682, tr 546, hr 406, el 321, de 262, bg 220, nl 153, fr 81. Language ≈ site proxy → use for domain-aware CV splits.
+- Label prevalence in the 58: Effusion .60, Synovitis .47, MM .45, ACL .41, LM .40, PF OA .36, Contusion .33, Fracture .31, Medial OA .26, Baker's .21, Lateral OA .19, MCL .16.
+- Data lives on TACC: `/scratch/07880/devansh/rsna_knee/data/raw/` (code at `/work/07880/devansh/lonestar/rsna_knee`, data symlinked). Mac has CSVs only (`data/raw/`).
+
 ## Data — the key structural facts
 
 1. `train.csv`: one row per study — `StudyInstanceUID`, `PatientSex`, `Report` (free text, **multiple languages**), 12 binary labels.

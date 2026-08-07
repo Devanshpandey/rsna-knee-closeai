@@ -1,0 +1,47 @@
+{
+  "n_studies": 4407,
+  "n_labeled_studies": 58,
+  "n_series": 24371,
+  "series_per_study": {
+    "count": 4407.0,
+    "mean": 5.530065804402088,
+    "std": 1.3938264669278175,
+    "min": 3.0,
+    "25%": 5.0,
+    "50%": 5.0,
+    "75%": 6.0,
+    "max": 14.0
+  },
+  "plane_counts": {
+    "Sagittal": 9864,
+    "Coronal": 8609,
+    "Axial": 5898
+  },
+  "fluid_sensitive_frac": 0.5748635673546428,
+  "fat_suppression_frac": 0.5748635673546428,
+  "label_prevalence_in_labeled": {
+    "ACL": 0.41379310344827586,
+    "MCL": 0.15517241379310345,
+    "Medial Meniscus": 0.4482758620689655,
+    "Lateral Meniscus": 0.39655172413793105,
+    "Medial OA": 0.25862068965517243,
+    "Lateral OA": 0.1896551724137931,
+    "PF OA": 0.3620689655172414,
+    "Effusion": 0.603448275862069,
+    "Synovitis": 0.46551724137931033,
+    "Baker's": 0.20689655172413793,
+    "Contusion": 0.3275862068965517,
+    "Fracture": 0.3103448275862069
+  },
+  "report_present_frac": 1.0,
+  "report_len_chars": {
+    "count": 4407.0,
+    "mean": 1097.905604719764,
+    "std": 693.9489246452099,
+    "min": 52.0,
+    "25%": 587.5,
+    "50%": 977.0,
+    "75%": 1459.5,
+    "max": 4743.0
+  }
+}

@@ -20,27 +20,27 @@ LABELS = ["ACL", "MCL", "Medial Meniscus", "Lateral Meniscus", "Medial OA",
 
 SYSTEM = """You are an expert musculoskeletal radiologist. You will be given a knee MRI radiology report. Reports may be written in English, Spanish, Turkish, Croatian, Greek, German, Bulgarian, Dutch, or French.
 
-Decide, for each of the 12 findings below, whether the report indicates the finding is PRESENT (1) or ABSENT (0).
+For each of the 12 findings below, output your confidence from 0 to 100 that an expert image annotator would mark the finding PRESENT on the images, given this report. The annotators used the specific thresholds below — follow them exactly.
 
-Definitions:
-- "ACL": anterior cruciate ligament injury — any acute or chronic tear (partial or complete), rupture, or clearly described ACL graft failure. Intact ACL or intact graft = 0.
-- "MCL": medial collateral ligament injury — sprain (any grade), partial or complete tear, or edema around the MCL described as injury.
-- "Medial Meniscus": medial meniscus tear — any tear (including root, radial, complex, bucket-handle, macerated). Degeneration WITHOUT tear = 0.
-- "Lateral Meniscus": lateral meniscus tear — same criteria as medial.
-- "Medial OA": osteoarthritis of the MEDIAL tibiofemoral compartment — cartilage loss/chondropathy, osteophytes, or degenerative change in that compartment.
-- "Lateral OA": osteoarthritis of the LATERAL tibiofemoral compartment — same criteria.
-- "PF OA": patellofemoral osteoarthritis — cartilage loss/chondromalacia/osteophytes in the patellofemoral compartment.
-- "Effusion": joint effusion — more than trace/physiologic joint fluid.
-- "Synovitis": synovitis — synovial thickening, synovial inflammation, or explicit mention of synovitis.
-- "Baker's": Baker's (popliteal) cyst of any size.
-- "Contusion": bone contusion / bone bruise / traumatic bone marrow edema.
-- "Fracture": any fracture (including avulsion, osteochondral, insufficiency, impaction), acute or subacute.
+Definitions and thresholds:
+- "ACL": partial or complete tear/rupture with fiber discontinuity, or failed graft. NOT present: intact ligament, grade 1-2 signal change with intact contour/fibers, interstitial signal or "interstitial tear" with fibers intact, mucoid or cystic degeneration, bony avulsion at the insertion without ligament fiber tear.
+- "MCL": grade 2 or 3 sprain, or partial/complete tear. NOT present: grade 1 sprain, periligamentous edema or fluid around an intact ligament, chronic thickening or thinning, retinaculum injury.
+- "Medial Meniscus": tear of the medial meniscus reaching an articular surface, or root/radial/complex/bucket-handle/displaced/macerated tear. NOT present: intrasubstance or mucoid degeneration, grade 1-2 signal not reaching the surface, extrusion alone.
+- "Lateral Meniscus": same criteria as medial meniscus.
+- "Medial OA": degenerative change of the MEDIAL tibiofemoral compartment: cartilage thinning/chondropathy/chondral ulcers or defects, osteophytes, degenerative subchondral change. "Tricompartmental" or "incipient OA of all compartments" counts for all three OA labels.
+- "Lateral OA": same criteria, LATERAL tibiofemoral compartment.
+- "PF OA": patellofemoral compartment degenerative change INCLUDING chondromalacia / patellar or trochlear chondropathy, cartilage defects, or osteophytes.
+- "Effusion": joint effusion described as moderate, large, significant, or unqualified. NOT present: trace/small/minimal/mild/"some" effusion, physiologic fluid, or effusion never mentioned. Do NOT infer effusion from injury severity.
+- "Synovitis": synovitis, synovial thickening/hypertrophy/enhancement, inflamed plica, or Hoffa fat-pad edema/impingement. A moderate-large effusion usually implies synovitis unless the synovium is explicitly normal.
+- "Baker\'s": Baker's (popliteal) cyst of any size.
+- "Contusion": traumatic bone marrow edema / bone bruise / contusion of the distal femur, proximal tibia, patella, or fibular head. NOT present: subchondral edema under a chondral lesion or degenerative change, marrow edema immediately surrounding a fracture (that is Fracture, not Contusion), soft-tissue edema.
+- "Fracture": ANY fracture: subchondral, nondisplaced, occult, trabecular, avulsion (including Segond and tibial-tuberosity avulsion), impression, insufficiency, osteochondral fracture, or a fracture line inside marrow edema. Watch for non-English terms (e.g. kirik, fraktur, fraktura, fractura, fisura, katagma).
 
 Rules:
-- Judge ONLY from the report text.
-- If a finding is explicitly negated or simply not mentioned, output 0.
-- "Cannot exclude X" or equivocal wording: output 1 only if the report leans toward the finding being present.
-- Answer with ONLY a JSON object, exact keys as above, values 0 or 1. No explanations."""
+- Judge ONLY from the report text; do not assume findings the report does not support.
+- Explicitly negated or unmentioned findings: confidence near 0.
+- Equivocal wording ("cannot exclude", "suspect"): intermediate confidence reflecting the wording.
+- Answer with ONLY a JSON object, exact keys as above, integer values 0-100. No explanations."""
 
 
 def build_prompt(tokenizer, report: str) -> str:
@@ -62,9 +62,13 @@ def parse_json(text: str):
     out = {}
     for k in LABELS:
         v = obj.get(k)
-        if v not in (0, 1, "0", "1"):
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
             return None
-        out[k] = int(v)
+        if not 0 <= v <= 100:
+            return None
+        out[k] = v / 100.0
     return out
 
 
@@ -90,7 +94,7 @@ def main() -> None:
 
     llm = LLM(model=args.model, max_model_len=args.max_model_len,
               gpu_memory_utilization=0.92, seed=42)
-    sp = SamplingParams(temperature=0.0, max_tokens=160, seed=42)
+    sp = SamplingParams(temperature=0.0, max_tokens=220, seed=42)
     outputs = llm.generate(prompts, sp)
 
     rows = []

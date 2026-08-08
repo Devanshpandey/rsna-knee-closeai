@@ -27,9 +27,16 @@ def main() -> None:
     rows = []
     for lab in LABELS:
         t = m[f"{lab}_true"].astype(int)
-        p = m[f"{lab}_pred"].astype("Int64")
-        ok = p.notna()
-        t2, p2 = t[ok], p[ok].astype(int)
+        praw = m[f"{lab}_pred"].astype(float)
+        ok = praw.notna()
+        t2 = t[ok]
+        s2 = praw[ok]                     # soft score in [0,1]
+        p2 = (s2 >= 0.5).astype(int)      # hard call at 0.5
+        try:
+            from sklearn.metrics import roc_auc_score
+            auc = roc_auc_score(t2, s2) if t2.nunique() == 2 else float("nan")
+        except Exception:
+            auc = float("nan")
         tp = int(((t2 == 1) & (p2 == 1)).sum())
         tn = int(((t2 == 0) & (p2 == 0)).sum())
         fp = int(((t2 == 0) & (p2 == 1)).sum())
@@ -38,7 +45,7 @@ def main() -> None:
         sens = tp / max(tp + fn, 1)
         spec = tn / max(tn + fp, 1)
         f1 = 2 * tp / max(2 * tp + fp + fn, 1)
-        rows.append(dict(label=lab, n=len(t2), prev=float(t2.mean()), acc=acc,
+        rows.append(dict(label=lab, n=len(t2), prev=float(t2.mean()), auc=auc, acc=acc,
                          sens=sens, spec=spec, f1=f1, fp=fp, fn=fn))
     res = pd.DataFrame(rows)
     res.loc["mean"] = res.mean(numeric_only=True)
@@ -49,7 +56,8 @@ def main() -> None:
     # disagreements for manual review
     dis = []
     for lab in LABELS:
-        bad = m[m[f"{lab}_true"].astype(int) != m[f"{lab}_pred"].fillna(-1).astype(int)]
+        hard = (m[f"{lab}_pred"].astype(float).fillna(-1) >= 0.5).astype(int)
+        bad = m[m[f"{lab}_true"].astype(int) != hard]
         for _, r in bad.iterrows():
             dis.append(dict(label=lab, uid=r["StudyInstanceUID"],
                             true=int(r[f"{lab}_true"]), pred=r[f"{lab}_pred"]))

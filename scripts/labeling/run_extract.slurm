@@ -13,15 +13,14 @@ conda activate rsna_env
 export HF_HOME=/work/07880/devansh/hf_cache
 cd /work/07880/devansh/lonestar/rsna_knee
 
-MODEL=${MODEL:-Qwen/Qwen2.5-14B-Instruct}
-TAG=${TAG:-14b}
-
-python scripts/labeling/extract_labels_llm.py \
-  --model "$MODEL" \
-  --train-csv data/csv/train.csv \
-  --output results/labels_llm_${TAG}.csv
-
-python scripts/labeling/validate_extraction.py \
-  --pred results/labels_llm_${TAG}.csv \
-  --train-csv data/csv/train.csv \
-  --out results/validation_llm_${TAG}.csv
+for PAIR in "Qwen/Qwen2.5-14B-Instruct:14b_v2" "Qwen/Qwen2.5-7B-Instruct:7b_v2"; do
+  MODEL="${PAIR%%:*}"; TAG="${PAIR##*:}"
+  python scripts/labeling/extract_labels_llm.py \
+    --model "$MODEL" \
+    --train-csv data/csv/train.csv \
+    --output results/labels_llm_${TAG}.csv
+  python scripts/labeling/validate_extraction.py \
+    --pred results/labels_llm_${TAG}.csv \
+    --train-csv data/csv/train.csv \
+    --out results/validation_llm_${TAG}.csv
+done

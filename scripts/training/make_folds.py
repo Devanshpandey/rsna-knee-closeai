@@ -32,8 +32,10 @@ def main() -> None:
 
     idx = df["StudyInstanceUID"]
     for lab in LABELS:
-        ens = (p14.loc[idx, lab].values + p7.loc[idx, lab].values) / 2.0
-        df[f"t_{lab}"] = ens                       # teacher soft target
+        a = p14.loc[idx, lab].astype(float)
+        b = p7.loc[idx, lab].astype(float)
+        ens = pd.concat([a.reset_index(drop=True), b.reset_index(drop=True)], axis=1).mean(axis=1, skipna=True)
+        df[f"t_{lab}"] = ens.values                # teacher soft target (14B-only where 7B unparsed)
     for lab in LABELS:                             # gold labels where they exist
         df[f"g_{lab}"] = train.set_index("StudyInstanceUID").loc[idx, lab].values
 

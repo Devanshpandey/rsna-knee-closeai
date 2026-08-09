@@ -89,6 +89,9 @@ def main() -> None:
     from model import KneeStudyModel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    cap = torch.cuda.get_device_capability()[0] if device == "cuda" else 0
+    amp_dtype = torch.bfloat16 if cap >= 8 else torch.float16
+    print(f"device {device} capability {cap} -> autocast {amp_dtype}", flush=True)
     ckpts = []
     for d in args.ckpt_dirs:
         for p in sorted(Path(d).glob("fold*/best.pt")):
@@ -124,7 +127,7 @@ def main() -> None:
         x = torch.stack(xs)[None].to(device)          # (1, S, K, 3, H, W)
         meta = torch.from_numpy(np.stack(metas))[None].to(device)
         mask = torch.ones(1, x.shape[1], device=device)
-        with torch.no_grad(), torch.autocast(device, dtype=torch.bfloat16, enabled=device == "cuda"):
+        with torch.no_grad(), torch.autocast(device, dtype=amp_dtype, enabled=device == "cuda"):
             probs = [m_(x, meta, mask).float().sigmoid().cpu().numpy()[0] for m_ in ckpts]
         rows.append([uid] + list(np.mean(probs, axis=0)))
         if (si + 1) % 50 == 0:

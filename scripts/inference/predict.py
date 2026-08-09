@@ -91,6 +91,7 @@ def main() -> None:
     ap.add_argument("--model-src", default=None,
                     help="dir containing model.py (defaults to this file's dir)")
     ap.add_argument("--decode-workers", type=int, default=4)
+    ap.add_argument("--tta", action="store_true", help="average over vertical flip")
     args = ap.parse_args()
 
     # fork decode workers BEFORE any CUDA init (forking after CUDA is unsafe)
@@ -142,8 +143,10 @@ def main() -> None:
         x = torch.stack(xs)[None].to(device)          # (1, S, K, 3, H, W)
         meta = torch.from_numpy(np.stack(metas))[None].to(device)
         mask = torch.ones(1, x.shape[1], device=device)
+        views = [x] + ([torch.flip(x, dims=[-2])] if args.tta else [])
         with torch.no_grad(), torch.autocast(device, dtype=amp_dtype, enabled=device == "cuda"):
-            probs = [m_(x, meta, mask).float().sigmoid().cpu().numpy()[0] for m_ in ckpts]
+            probs = [m_(v, meta, mask).float().sigmoid().cpu().numpy()[0]
+                     for m_ in ckpts for v in views]
         rows.append([uid] + list(np.mean(probs, axis=0)))
         if (si + 1) % 50 == 0:
             print(f"{si+1}/{len(test)} studies", flush=True)

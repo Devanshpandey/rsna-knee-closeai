@@ -63,6 +63,7 @@ def main() -> None:
     ap.add_argument("--accum", type=int, default=3)
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--k-slices", type=int, default=16)
+    ap.add_argument("--crop", type=int, default=224)
     ap.add_argument("--workers", type=int, default=10)
     ap.add_argument("--smoke", action="store_true", help="tiny run to validate plumbing")
     args = ap.parse_args()
@@ -72,11 +73,11 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
 
     ds_tr = KneeStudyDataset(args.folds_csv, args.series_csv, args.proc_dir,
-                             args.fold, "train", k_slices=args.k_slices)
+                             args.fold, "train", k_slices=args.k_slices, crop=args.crop)
     ds_va = KneeStudyDataset(args.folds_csv, args.series_csv, args.proc_dir,
-                             args.fold, "val", k_slices=args.k_slices, train_aug=False)
+                             args.fold, "val", k_slices=args.k_slices, train_aug=False, crop=args.crop)
     ds_gold = KneeStudyDataset(args.folds_csv, args.series_csv, args.proc_dir,
-                               args.fold, "gold", k_slices=args.k_slices, train_aug=False,
+                               args.fold, "gold", k_slices=args.k_slices, train_aug=False, crop=args.crop,
                                target_cols=[f"g_{l}" for l in LABELS])
     if args.smoke:
         ds_tr.meta = ds_tr.meta.head(24); ds_va.meta = ds_va.meta.head(12)

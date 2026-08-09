@@ -10,6 +10,7 @@ Local test (TACC):
 """
 import argparse
 import sys
+from multiprocessing import Pool
 from pathlib import Path
 
 import numpy as np
@@ -70,6 +71,13 @@ def sample_slices(vol: np.ndarray, k: int, crop: int) -> torch.Tensor:
     return torch.from_numpy((sl - 0.45) / 0.225)
 
 
+def _decode_safe(series_dir):
+    try:
+        return load_series_volume(series_dir)
+    except Exception:
+        return None
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--test-csv", required=True)
@@ -82,7 +90,11 @@ def main() -> None:
     ap.add_argument("--max-series", type=int, default=6)
     ap.add_argument("--model-src", default=None,
                     help="dir containing model.py (defaults to this file's dir)")
+    ap.add_argument("--decode-workers", type=int, default=4)
     args = ap.parse_args()
+
+    # fork decode workers BEFORE any CUDA init (forking after CUDA is unsafe)
+    pool = Pool(args.decode_workers) if args.decode_workers > 1 else None
 
     src = args.model_src or str(Path(__file__).resolve().parent.parent / "training")
     sys.path.insert(0, src)
@@ -108,13 +120,16 @@ def main() -> None:
     root = Path(args.dicom_root)
     rows = []
     for si, uid in enumerate(test.StudyInstanceUID):
-        srs = series[series.StudyInstanceUID == uid].head(args.max_series)
+        srs = list(series[series.StudyInstanceUID == uid].head(args.max_series).itertuples())
+        dirs = [root / uid / r.SeriesInstanceUID for r in srs]
+        if pool is not None:
+            vols = pool.map(_decode_safe, dirs)
+        else:
+            vols = [_decode_safe(d) for d in dirs]
         xs, metas = [], []
-        for r in srs.itertuples():
-            try:
-                vol = load_series_volume(root / uid / r.SeriesInstanceUID)
-            except Exception as e:
-                print(f"  skip series {r.SeriesInstanceUID}: {e}", flush=True)
+        for r, vol in zip(srs, vols):
+            if vol is None:
+                print(f"  skip series {r.SeriesInstanceUID}", flush=True)
                 continue
             xs.append(sample_slices(vol, args.k_slices, args.crop))
             m = np.zeros(5, dtype=np.float32)

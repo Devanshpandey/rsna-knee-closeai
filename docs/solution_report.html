@@ -69,8 +69,8 @@ code { font-family:ui-monospace,Menlo,monospace; font-size:.9em; background:var(
 <p class="sub">How a reports-as-teacher, images-as-student pipeline reached the top 10 of the RSNA Knee
 Abnormality Detection leaderboard within 48 hours of a single GPU-node allocation.</p>
 <div class="stats">
-<div class="stat"><b>0.915</b><span>public LB, macro AUC</span></div>
-<div class="stat"><b>~9 / 488</b><span>teams at submission</span></div>
+<div class="stat"><b>0.918</b><span>public LB, macro AUC</span></div>
+<div class="stat"><b>top-10</b><span>debut rank, day 1</span></div>
 <div class="stat"><b>58</b><span>human-labeled studies</span></div>
 <div class="stat"><b>9</b><span>report languages</span></div>
 <div class="stat"><b>48 h</b><span>3×A100 node window</span></div>
@@ -281,8 +281,8 @@ findings (Synovitis, PF OA), where a statistical relabeling attempt also failed 
 <li><span class="t">Submission 2</span><span><strong>0.912</strong> — efficiency-track variant: 4
 checkpoints, parallel DICOM decode, ~2&times; faster. Within noise of the flagship at a
 fraction of the compute.</span></li>
-<li><span class="t">Submission 3</span><span>Round-3 ensemble (EfficientNetV2-S + SE-ResNeXt50,
-8 checkpoints, test-time augmentation) — scoring in progress.</span></li>
+<li><span class="t">Submission 3</span><span><strong>0.918 public AUC — current best.</strong> Round-3
+ensemble (EfficientNetV2-S + SE-ResNeXt50, 8 checkpoints, test-time augmentation).</span></li>
 </ul>
 <p>Local validation was honest throughout: the gold-58 estimate (0.90) slightly <em>under</em>-predicted
 the public score, and every modeling decision was made on out-of-fold or quarantined-gold data only —

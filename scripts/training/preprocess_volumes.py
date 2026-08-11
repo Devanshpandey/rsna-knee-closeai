@@ -36,9 +36,10 @@ def load_series(series_dir: Path) -> np.ndarray:
             normal_dot = float(np.dot(normal, np.array(pos, dtype=float)))
         inst = int(getattr(ds, "InstanceNumber", 0) or 0)
         arr = ds.pixel_array.astype(np.float32)
+        spacing = getattr(ds, "PixelSpacing", None)
         slope = float(getattr(ds, "RescaleSlope", 1) or 1)
         intercept = float(getattr(ds, "RescaleIntercept", 0) or 0)
-        slices.append((normal_dot, inst, arr * slope + intercept))
+        slices.append((normal_dot, inst, arr * slope + intercept, spacing))
     if not slices:
         raise ValueError("empty series")
     # sort by projection along slice normal when available, else InstanceNumber
@@ -51,13 +52,25 @@ def load_series(series_dir: Path) -> np.ndarray:
         from collections import Counter
         target = Counter(s[2].shape for s in slices).most_common(1)[0][0]
         import cv2
-        slices = [(a, b, cv2.resize(img, (target[1], target[0]))) for a, b, img in slices]
-    return np.stack([s[2] for s in slices])
+        slices = [(a, b, cv2.resize(img, (target[1], target[0])), sp) for a, b, img, sp in slices]
+    vol = np.stack([s[2] for s in slices])
+    spacing = next((s[3] for s in slices if s[3] is not None), None)
+    return vol, spacing
 
 
-def normalize_resize(vol: np.ndarray, size: int) -> np.ndarray:
-    """Percentile clip -> [0,255] uint8, resize in-plane to (size,size)."""
+def normalize_resize(vol: np.ndarray, size: int, spacing=None, fov_mm: float = 0) -> np.ndarray:
+    """Optional physical center-crop to fov_mm, percentile clip -> uint8, resize to (size,size)."""
     import cv2
+    if fov_mm and spacing is not None:
+        try:
+            py, px = float(spacing[0]), float(spacing[1])
+            ch = min(vol.shape[1], max(32, int(round(fov_mm / py))))
+            cw = min(vol.shape[2], max(32, int(round(fov_mm / px))))
+            y0 = (vol.shape[1] - ch) // 2
+            x0 = (vol.shape[2] - cw) // 2
+            vol = vol[:, y0:y0 + ch, x0:x0 + cw]
+        except (TypeError, ValueError, IndexError):
+            pass
     lo, hi = np.percentile(vol, [1, 99])
     vol = np.clip(vol, lo, hi)
     vol = (vol - lo) / max(hi - lo, 1e-6) * 255.0
@@ -66,16 +79,16 @@ def normalize_resize(vol: np.ndarray, size: int) -> np.ndarray:
 
 
 def process_one(task):
-    study_uid, series_uid, dicom_root, out_dir, size = task
+    study_uid, series_uid, dicom_root, out_dir, size, fov_mm = task
     out_path = Path(out_dir) / study_uid / f"{series_uid}.npy"
     try:
         if out_path.exists():
             v = np.load(out_path, mmap_mode="r")
             return dict(StudyInstanceUID=study_uid, SeriesInstanceUID=series_uid,
                         n_slices=v.shape[0], h=v.shape[1], w=v.shape[2], status="cached")
-        vol = load_series(Path(dicom_root) / study_uid / series_uid)
+        vol, spacing = load_series(Path(dicom_root) / study_uid / series_uid)
         n_raw_h, n_raw_w = vol.shape[1], vol.shape[2]
-        vol = normalize_resize(vol, size)
+        vol = normalize_resize(vol, size, spacing=spacing, fov_mm=fov_mm)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         np.save(out_path, vol)
         return dict(StudyInstanceUID=study_uid, SeriesInstanceUID=series_uid,
@@ -92,6 +105,7 @@ def main() -> None:
     ap.add_argument("--series-csv", required=True)
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--size", type=int, default=256)
+    ap.add_argument("--fov-mm", type=float, default=0, help="physical center crop, e.g. 140")
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
@@ -99,7 +113,7 @@ def main() -> None:
     series = pd.read_csv(args.series_csv)
     if args.limit:
         series = series.head(args.limit)
-    tasks = [(r.StudyInstanceUID, r.SeriesInstanceUID, args.dicom_root, args.out_dir, args.size)
+    tasks = [(r.StudyInstanceUID, r.SeriesInstanceUID, args.dicom_root, args.out_dir, args.size, args.fov_mm)
              for r in series.itertuples()]
     print(f"{len(tasks)} series -> {args.out_dir}", flush=True)
 

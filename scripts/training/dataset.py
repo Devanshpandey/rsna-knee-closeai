@@ -15,6 +15,11 @@ LABELS = ["ACL", "MCL", "Medial Meniscus", "Lateral Meniscus", "Medial OA",
           "Lateral OA", "PF OA", "Effusion", "Synovitis", "Baker's",
           "Contusion", "Fracture"]
 PLANES = {"Sagittal": 0, "Coronal": 1, "Axial": 2}
+# under a horizontal mirror, medial<->lateral structures swap appearance
+SWAP_IDX = list(range(len(LABELS)))
+for a, b in [("Medial Meniscus", "Lateral Meniscus"), ("Medial OA", "Lateral OA")]:
+    ia, ib = LABELS.index(a), LABELS.index(b)
+    SWAP_IDX[ia], SWAP_IDX[ib] = ib, ia
 
 
 class KneeStudyDataset(Dataset):
@@ -90,13 +95,19 @@ class KneeStudyDataset(Dataset):
         srs = list(self.series_map[row.StudyInstanceUID])
         if len(srs) > self.max_series:
             srs = random.sample(srs, self.max_series) if self.aug else srs[:self.max_series]
+        mirror = self.aug and random.random() < 0.5   # study-level mirror + label swap
         slices, metas = [], []
         for path, plane, fluid, fat in srs:
-            slices.append(self._load_series(path))
+            sl = self._load_series(path)
+            if mirror:
+                sl = torch.flip(sl, dims=[-1])
+            slices.append(sl)
             m = np.zeros(5, dtype=np.float32)
             m[plane] = 1.0; m[3] = fluid; m[4] = fat
             metas.append(m)
         t = row[self.targets_cols].values.astype(np.float32)
+        if mirror:
+            t = t[SWAP_IDX]
         return (torch.stack(slices), torch.from_numpy(np.stack(metas)),
                 torch.tensor(t), row.StudyInstanceUID)
 

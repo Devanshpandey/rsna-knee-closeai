@@ -93,6 +93,8 @@ def main() -> None:
     print(f"fold {args.fold}: train {len(ds_tr)} | val {len(ds_va)} | gold {len(ds_gold)}", flush=True)
 
     model = KneeStudyModel(args.backbone).to(device)
+    ema = torch.optim.swa_utils.AveragedModel(
+        model, avg_fn=lambda a, c, n: 0.999 * a + 0.001 * c, use_buffers=True)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-2)
     steps = max(1, len(dl_tr) // args.accum) * args.epochs
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=args.lr, total_steps=steps,
@@ -114,13 +116,15 @@ def main() -> None:
             if (i + 1) % args.accum == 0:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 opt.step(); sched.step(); opt.zero_grad()
+                ema.update_parameters(model)
             tot += loss.item() * args.accum; nb += 1
             if nb % 50 == 0:
                 print(f"  ep{ep} {nb}/{len(dl_tr)} loss {tot/nb:.4f} "
                       f"({(time.time()-t0)/nb:.2f}s/b)", flush=True)
 
-        _, _, _, va_aucs = evaluate(model, dl_va, device)
-        gp, gt, gu, gold_aucs = evaluate(model, dl_gold, device)
+        eval_net = ema.module if ep >= 1 else model     # EMA needs a warmup epoch
+        _, _, _, va_aucs = evaluate(eval_net, dl_va, device)
+        gp, gt, gu, gold_aucs = evaluate(eval_net, dl_gold, device)
         va_mean = float(np.mean(list(va_aucs.values())))
         gold_mean = float(np.mean(list(gold_aucs.values()))) if gold_aucs else float("nan")
         print(f"ep{ep}: loss {tot/max(nb,1):.4f} | val-teacher AUC {va_mean:.4f} | "
@@ -129,7 +133,7 @@ def main() -> None:
                         val_aucs=va_aucs, gold_aucs=gold_aucs))
         if va_mean > best:
             best = va_mean
-            torch.save({"model": model.state_dict(), "backbone": args.backbone,
+            torch.save({"model": eval_net.state_dict(), "backbone": args.backbone,
                         "epoch": ep, "val_auc": va_mean, "gold_auc": gold_mean},
                        out / "best.pt")
 

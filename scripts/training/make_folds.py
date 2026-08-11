@@ -45,10 +45,14 @@ def main() -> None:
     vc = strat.value_counts()
     strat = strat.where(strat.map(vc) >= N_FOLDS, df["lang"])
 
+    # group by byte-identical report cluster so duplicated reports never span folds
+    rep_norm = train.set_index("StudyInstanceUID").loc[idx, "Report"].fillna("").str.strip()
+    df["rep_group"] = rep_norm.factorize()[0]
     df["fold"] = -1
     nong = df[df.is_gold == 0]
-    skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=42)
-    for f, (_, va) in enumerate(skf.split(nong, strat.loc[nong.index])):
+    from sklearn.model_selection import StratifiedGroupKFold
+    sgkf = StratifiedGroupKFold(n_splits=N_FOLDS, shuffle=True, random_state=42)
+    for f, (_, va) in enumerate(sgkf.split(nong, strat.loc[nong.index], groups=nong["rep_group"])):
         df.loc[nong.index[va], "fold"] = f
     # gold studies: fold = -1 (never trained on; used as global validation set)
 

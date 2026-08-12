@@ -1,0 +1,10 @@
+# competition data/derivatives and secrets never enter the repo
+*.parquet
+*.npz
+*.pt
+*.whl
+env.sh
+data/
+runs/
+preds/
+wheels/

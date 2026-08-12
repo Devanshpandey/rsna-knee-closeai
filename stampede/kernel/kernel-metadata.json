@@ -1,0 +1,26 @@
+{
+  "id": "liaoyixu/rsna-submit-v1",
+  "id_no": 130297704,
+  "title": "rsna-submit-v1",
+  "code_file": "rsna-submit-v1.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "docker_image_pinning_type": "original",
+  "keywords": [
+    "gpu"
+  ],
+  "dataset_sources": [
+    "liaoyixu/rsna-knee-code",
+    "liaoyixu/rsna-knee-weights",
+    "liaoyixu/rsna-torch-cu118"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [
+    "rsna-knee-abnormality-detection"
+  ],
+  "model_sources": []
+}

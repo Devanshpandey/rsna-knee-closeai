@@ -129,3 +129,9 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
 - Checkpoint inventory on /scratch/09059/xliaoyi/kaggle/runs/: v5-era
   (cnxt,v2m,cnxb@320; cnxt384,v2m384@384), v6/v7 pairs @384 (LB 0.944 =
   v6 pair), tdev + partial v8. Weights dataset currently holds the v7 pair.
+- LATE UPDATE (node T-5min): v2m384_tdev completed ALL 4 folds before expiry
+  (fold golds 0.889/0.895/0.903/0.899 — uniformly below the v5 baseline,
+  confirming the Task-1 negative). TTA family eval + shared/oof export did
+  NOT finish — checkpoints in /scratch/09059/xliaoyi/kaggle/runs/v2m384_tdev_f*/;
+  next GPU allocation should run eval_ensemble on them and version the OOF
+  files into shared/oof/ if the stacking work wants them.

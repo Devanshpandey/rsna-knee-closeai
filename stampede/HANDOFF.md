@@ -105,9 +105,11 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   (46 GB; the shard dirs contain the study npz files directly).
 
 ## Session end-state 2026-08-12 ~21:40 UTC (node expiry) — READ BEFORE RESUMING
-- LB: CloseAI 0.944 (#2); MKhlystun 0.946 (#1). Best scored config = v6
-  pseudo-label pair (cnxt-s@384 + v2m@384, 8 models). v7-pair probe (gold
-  0.9234) submitted, SCORE PENDING at session end — check it first.
+- LB: **CloseAI 0.946 = RANK 1** (tied MKhlystun 0.946, ahead on tiebreak;
+  then 0.943/0.942). Scored config = v7 pseudo-label pair (cnxt-s@384 +
+  v2m@384, 8 models, kernel v15, weights dataset current). v7 iteration
+  transferred (+0.2 LB) despite flat offline gold — offline yardsticks
+  underestimate pseudo-label generations; LB-probe them.
 - KERNEL RUNTIME CEILING: 12x384 models + TTA EXCEEDS 9h rerun (one burned
   submission). Max 8x384 models.
 - Task 1 (T_dev = devansh extractor): NEGATIVE. cnxt384_tdev OOF 0.8867 /

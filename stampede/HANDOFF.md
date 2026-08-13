@@ -103,3 +103,27 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   preprocessing), lightgbm (stage-2). No DICOM work needed if you use npz320.
 - The npz dataset download: `kaggle datasets download liaoyixu/rsna-knee-npz320`
   (46 GB; the shard dirs contain the study npz files directly).
+
+## Session end-state 2026-08-12 ~21:40 UTC (node expiry) — READ BEFORE RESUMING
+- LB: CloseAI 0.944 (#2); MKhlystun 0.946 (#1). Best scored config = v6
+  pseudo-label pair (cnxt-s@384 + v2m@384, 8 models). v7-pair probe (gold
+  0.9234) submitted, SCORE PENDING at session end — check it first.
+- KERNEL RUNTIME CEILING: 12x384 models + TTA EXCEEDS 9h rerun (one burned
+  submission). Max 8x384 models.
+- Task 1 (T_dev = devansh extractor): NEGATIVE. cnxt384_tdev OOF 0.8867 /
+  gold 0.9140 vs v5 baseline 0.8907/0.9179. v2m384_tdev fold golds
+  0.889-0.903 (also below v5's 0.9036-0.9146). Extractor accuracy does NOT
+  transfer to students; severity grading + pseudo-labels matter more.
+  shared/oof/ has cnxt384_tdev; v2m384_tdev eval was racing node expiry —
+  checkpoints in stampede runs/ on /scratch (survive the node).
+- v8 targets (per-label trust map §1.3 over T_dev + v7-pair OOF,
+  labels_train_v8_pl.parquet): folds 0 done (gold 0.9192 — between v6 and
+  v7), f1/f2 mid-train at expiry, f3 not started. Verdict incomplete;
+  pseudo-label iterations (v6->v7->v8) all land gold 0.92-0.926 — the
+  target-engineering lane is saturating. Next levers: team stacking (Task 3,
+  devansh OOF on folds_v4), longer schedules, bigger 384 backbones.
+- All fold assignments PINNED: shared/folds/folds_v4.csv (hash
+  17161916260226758772). NEVER recompute (env-sensitive; see export_folds.py).
+- Checkpoint inventory on /scratch/09059/xliaoyi/kaggle/runs/: v5-era
+  (cnxt,v2m,cnxb@320; cnxt384,v2m384@384), v6/v7 pairs @384 (LB 0.944 =
+  v6 pair), tdev + partial v8. Weights dataset currently holds the v7 pair.

@@ -1,3 +1,5 @@
 family,arch,px,targets,folds_hash,date,note
 cnxt384_tdev,convnext_small.fb_in22k_ft_in1k,384,T_dev(nanmean14B+7B),17161916260226758772,2026-08-13,4folds
 v2m384_tdev,tf_efficientnetv2_m.in21k_ft_in1k,384,T_dev(nanmean14B+7B),17161916260226758772,2026-08-14,4folds
+mil_effnetv2s_288,tf_efficientnetv2_s+MIL-attn,288,devansh r2c per-label blend,17161916260226758772,2026-08-13,"4folds; oof_/gold_ plain, oof_tta_/gold_tta_ = mirror-TTA (r4_v2 files)"
+mil_seresnext50_288,seresnext50_32x4d+MIL-attn,288,devansh r2c per-label blend,17161916260226758772,2026-08-13,"4folds; r4_v3 files; gold noTTA 0.898 combined, TTA 0.896"

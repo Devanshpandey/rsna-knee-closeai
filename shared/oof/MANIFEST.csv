@@ -3,3 +3,12 @@ cnxt384_tdev,convnext_small.fb_in22k_ft_in1k,384,T_dev(nanmean14B+7B),1716191626
 v2m384_tdev,tf_efficientnetv2_m.in21k_ft_in1k,384,T_dev(nanmean14B+7B),17161916260226758772,2026-08-14,4folds
 mil_effnetv2s_288,tf_efficientnetv2_s+MIL-attn,288,devansh r2c per-label blend,17161916260226758772,2026-08-13,"4folds; oof_/gold_ plain, oof_tta_/gold_tta_ = mirror-TTA (r4_v2 files)"
 mil_seresnext50_288,seresnext50_32x4d+MIL-attn,288,devansh r2c per-label blend,17161916260226758772,2026-08-13,"4folds; r4_v3 files; gold noTTA 0.898 combined, TTA 0.896"
+cnxt320_v5,convnext_small.fb_in22k_ft_in1k,320,v5_severity,17161916260226758772,2026-08-14,4folds
+v2m320_v5,tf_efficientnetv2_m.in21k_ft_in1k,320,v5_severity,17161916260226758772,2026-08-14,4folds
+cnxb320_v5,convnext_base.fb_in22k_ft_in1k,320,v5_severity,17161916260226758772,2026-08-14,4folds
+cnxt384_v5,convnext_small.fb_in22k_ft_in1k,384,v5_severity,17161916260226758772,2026-08-14,4folds
+cnxt384_v6,convnext_small.fb_in22k_ft_in1k,384,v6_pl(0.5v5+0.5oof16),17161916260226758772,2026-08-14,4folds
+v2m384_v6,tf_efficientnetv2_m.in21k_ft_in1k,384,v6_pl(0.5v5+0.5oof16),17161916260226758772,2026-08-14,4folds
+cnxt384_v7,convnext_small.fb_in22k_ft_in1k,384,v7_pl,17161916260226758772,2026-08-14,4folds
+v2m384_v7,tf_efficientnetv2_m.in21k_ft_in1k,384,v7_pl,17161916260226758772,2026-08-14,4folds
+v2m384_v5,tf_efficientnetv2_m.in21k_ft_in1k,384,v5_severity,17161916260226758772,2026-08-14,4folds

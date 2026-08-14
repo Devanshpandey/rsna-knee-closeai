@@ -135,3 +135,25 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   NOT finish — checkpoints in /scratch/09059/xliaoyi/kaggle/runs/v2m384_tdev_f*/;
   next GPU allocation should run eval_ensemble on them and version the OOF
   files into shared/oof/ if the stacking work wants them.
+
+## Session 2026-08-14 (fresh 48h allocation, ends 08-15 18:28 UTC-5)
+- Cleared the expiry backlog: v2m384_tdev 4-fold TTA eval done (pooled OOF
+  0.8867 / gold 0.9113 — Task-1 negative stands); full 4-fold OOF+gold
+  replaced the 3-fold files in shared/oof.
+- shared/oof now has ALL 11 Stampede3 families for the Task-3 stack (v5-era
+  x5, v6 pair, v7 pair, tdev pair, cnxt384_v8) — 4-fold TTA, v5-aligned
+  yardstick, folds_v4, manifest updated. v2m384_v7 per-family eval was
+  missing and is now computed (OOF 0.9109 / gold 0.9225).
+- v8 VERDICT (cnxt384_v8 4-fold complete): gold 0.9273 vs v7 0.9258
+  (+0.0015, within sigma 0.0125); v5-yardstick OOF 0.9045 (mismatched
+  yardstick for pseudo-label targets — expected to read low). Offline FLAT,
+  consistent with target-lane saturation; per the v7 lesson the deciding
+  test is an LB probe of the v8 PAIR.
+- v2m384_v8 4-fold family training NOW (bs 6, lr 9e-5, 6 ep, K=24, EMA —
+  exact v2m384_v7 recipe on v8 targets); ETA ~8h from 14:30 local. When
+  done: TTA eval + shared/oof export. Checkpoints for a possible v8-pair
+  probe: runs/cnxt384_v8_f*/best.pt + runs/v2m384_v8_f*/best.pt (lab server
+  decides the probe; weights_upload/ still stages the v7 pair, untouched).
+- NODE-SHARING NOTE: the user runs cell-tracking trainings on the same tap_jupy
+  node (up to 49 GB on one GPU). Check nvidia-smi per-GPU headroom before
+  launching; a 384px bs6-8 fold needs ~50-55 GB.

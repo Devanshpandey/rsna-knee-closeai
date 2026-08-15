@@ -190,7 +190,12 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   variant, 2.5% D-mix) are method probes, not score probes. If v10 < 0.947:
   winner's-curse hit; fall back config #5 {cnxt384_v7, v2m384_v6} (+0.0009,
   zero runtime risk) and investigate.
-- IN FLIGHT on Stampede3 (walltime to 18:28 local): per-series pred dumps
-  (--save-series) for the 7 modern 384 families -> learned study-aggregation
-  study (replace 0.5(mean+max); zero kernel runtime cost) via aggr_opt.py
-  pattern on the deployed pair.
+- AGGREGATION STUDY (shared/oof/AGGR_RESULTS.md): top-4-mean per label
+  beats 0.5(mean+max) by +0.0009 (4/4 folds, k=3-4 plateau, verified,
+  label-free). ALL fitted aggregators (LR/LGBM, 14-28 features) lose by
+  0.003-0.009 — that lever is closed. Kernel v17 = pair + top-4 mean.
+- SECOND PROBE SUBMITTED 16:07 UTC: "v11" = kernel v17 (pair + top-4 agg),
+  combined OOF 0.9147 (+0.0027 vs old config), expected LB ~0.949.
+  v10 (pair only, kernel v16) still pending -> clean A/B on aggregation.
+  3/5 probes left today. Series dumps for 7 modern families in preds/
+  <fam>_series/ (also enables future aggregation work on other configs).

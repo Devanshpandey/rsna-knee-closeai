@@ -173,3 +173,24 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   space is saturated offline; remaining levers (v8-pair LB probe, kernel
   family swap, Task-3 stack once devansh's OOF lands) are lab-server-side.
   GPUs freed for the user's cell-tracking work.
+
+## Session 2026-08-15 — LB response (we fell to #3: Brandon Low 0.949, MKhlystun 0.946 tiebreak)
+- 10-agent fold-honest stacking study over all 18 shared/oof families
+  (doc: shared/oof/STACKING_RESULTS.md). Verified winner: uniform prob-avg
+  {cnxb384_v7, v2m384_v6} OOF 0.9141 / gold 0.9254 (+0.0020/+0.0010 vs v7
+  pair, 4/4 folds, zero selection optimism by nested greedy). Learned
+  stackers NO-GO (tie at 7x kernel budget). D-mix: devansh's 2:1-4:1
+  sweet spot REFUTED — best D weight <=2.5-7.5%, gains <=0.0002.
+- DEPLOYED from Stampede3: weights dataset v9 (best_f{0-3}.pt = cnxb384_v7,
+  best_f{0-3}_v2m384v6.pt = v2m384_v6), kernel v16 (code unchanged,
+  auto-adapts), SUBMITTED 2026-08-15 15:32 UTC as "v10" — PENDING.
+  Expected LB ~0.9486 +/- 0.001. Stub inference window 56s vs 47s for the
+  old pair (+19%, safe vs the 12-model timeout). 4/5 probes left today.
+- If v10 >= 0.948: probe candidates in STACKING_RESULTS.md sec 5 (rank-avg
+  variant, 2.5% D-mix) are method probes, not score probes. If v10 < 0.947:
+  winner's-curse hit; fall back config #5 {cnxt384_v7, v2m384_v6} (+0.0009,
+  zero runtime risk) and investigate.
+- IN FLIGHT on Stampede3 (walltime to 18:28 local): per-series pred dumps
+  (--save-series) for the 7 modern 384 families -> learned study-aggregation
+  study (replace 0.5(mean+max); zero kernel runtime cost) via aggr_opt.py
+  pattern on the deployed pair.

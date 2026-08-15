@@ -162,3 +162,14 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
 - NODE-SHARING NOTE: the user runs cell-tracking trainings on the same tap_jupy
   node (up to 49 GB on one GPU). Check nvidia-smi per-GPU headroom before
   launching; a 384px bs6-8 fold needs ~50-55 GB.
+- NEW FAMILY cnxb384_v7 (convnext_base@384 on v7_pl, 6 ep, bs 6, lr 9e-5,
+  K=24, EMA): pooled OOF 0.9126 = BEST single family (cnxt384_v7 0.9101,
+  v2m384_v7 0.9109); gold 0.9255. Weak labels improved: LatMen 0.921,
+  PF OA 0.870, Synovitis 0.877 (OOF). shared/oof has all 13 families.
+  Checkpoints runs/cnxb384_v7_f*/best.pt. Kernel is capped at 8x384 models —
+  swapping cnxb384_v7 in (e.g. for v2m384) is a lab-server call; greedy
+  subset selection over the 13 exported OOF families can decide offline.
+- Session stopped launching new lanes with ~15h walltime left: 6-ep family
+  space is saturated offline; remaining levers (v8-pair LB probe, kernel
+  family swap, Task-3 stack once devansh's OOF lands) are lab-server-side.
+  GPUs freed for the user's cell-tracking work.

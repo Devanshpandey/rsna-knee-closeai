@@ -14,3 +14,4 @@ v2m384_v7,tf_efficientnetv2_m.in21k_ft_in1k,384,v7_pl,17161916260226758772,2026-
 v2m384_v5,tf_efficientnetv2_m.in21k_ft_in1k,384,v5_severity,17161916260226758772,2026-08-14,4folds
 cnxt384_v8,convnext_small.fb_in22k_ft_in1k,384,v8_pl(trust-map:T_dev+v7oof),17161916260226758772,2026-08-14,4folds
 v2m384_v8,tf_efficientnetv2_m.in21k_ft_in1k,384,v8_pl(trust-map:T_dev+v7oof),17161916260226758772,2026-08-14,4folds
+cnxb384_v7,convnext_base.fb_in22k_ft_in1k,384,v7_pl,17161916260226758772,2026-08-15,4folds

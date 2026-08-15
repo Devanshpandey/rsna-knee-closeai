@@ -199,3 +199,14 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   v10 (pair only, kernel v16) still pending -> clean A/B on aggregation.
   3/5 probes left today. Series dumps for 7 modern families in preds/
   <fam>_series/ (also enables future aggregation work on other configs).
+- v10 RESULT: 0.946 — flat vs old config at 3-decimal LB resolution.
+  The +1.3 LB/OOF mapping did NOT hold for this step (+0.0020 OOF -> ~0 LB).
+  Read: our weak-label OOF yardstick has decoupled from the hidden test at
+  this margin; sub-0.001-LB increments are also invisible on a 3-decimal
+  board. STOP probing incremental ensemble variants. Meanwhile leaders
+  moved: Brandon Low 0.950 (+0.004 in 2 days), MKhlystun 0.947. The gap
+  (~0.004) is beyond everything left in our saturated ensemble space —
+  next gains must come from a qualitatively different lever: architecture
+  (3D/cross-series attention at scale), pretraining (video/MRI weights),
+  external data (check rules thread), or resolution >384 with the physical
+  crop. Keep v10/v11 for the conservative final pick evaluation.

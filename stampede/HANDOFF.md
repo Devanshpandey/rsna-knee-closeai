@@ -149,11 +149,16 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   yardstick for pseudo-label targets — expected to read low). Offline FLAT,
   consistent with target-lane saturation; per the v7 lesson the deciding
   test is an LB probe of the v8 PAIR.
-- v2m384_v8 4-fold family training NOW (bs 6, lr 9e-5, 6 ep, K=24, EMA —
-  exact v2m384_v7 recipe on v8 targets); ETA ~8h from 14:30 local. When
-  done: TTA eval + shared/oof export. Checkpoints for a possible v8-pair
-  probe: runs/cnxt384_v8_f*/best.pt + runs/v2m384_v8_f*/best.pt (lab server
-  decides the probe; weights_upload/ still stages the v7 pair, untouched).
+- v2m384_v8 COMPLETE (4 folds, exact v2m384_v7 recipe on v8 targets):
+  pooled OOF 0.9042 / gold 0.9246. shared/oof has all 12 families.
+- v8 PAIR (8 models, TTA): OOF 0.9064 / gold 0.9263 vs v7 pair 0.9118 /
+  0.9234 (LB 0.946). Gold +0.0029 (noise), v5-yardstick OOF lower (target
+  drift artifact). OFFLINE CANNOT SEPARATE v8 FROM v7 — same as the v7-vs-v6
+  call, which transferred +0.2 LB. Recommend ONE probe of the v8 pair when
+  the submission budget allows; if flat, the target-engineering lane is
+  confirmed closed and effort goes to Task-3 stacking + bigger backbones.
+  Checkpoints: runs/cnxt384_v8_f*/best.pt + runs/v2m384_v8_f*/best.pt
+  (lab server decides; weights_upload/ still stages the v7 pair, untouched).
 - NODE-SHARING NOTE: the user runs cell-tracking trainings on the same tap_jupy
   node (up to 49 GB on one GPU). Check nvidia-smi per-GPU headroom before
   launching; a 384px bs6-8 fold needs ~50-55 GB.

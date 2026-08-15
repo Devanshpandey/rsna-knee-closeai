@@ -210,3 +210,16 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   (3D/cross-series attention at scale), pretraining (video/MRI weights),
   external data (check rules thread), or resolution >384 with the physical
   crop. Keep v10/v11 for the conservative final pick evaluation.
+- READY TO LAUNCH (next allocation): study-MIL@384 lane — devansh's
+  architecture (slice-attn -> series-attn, stampede/src/train/study_model.py)
+  x our full recipe (plane-aware mirror+label-swap, [0,1] norm, pinned
+  folds, EMA, bf16; study_dataset.py + train_study.py). Smoke-tested
+  end-to-end on npz384_study. Architecturally diverse from everything in
+  the kernel AND from devansh's 320px retrains on LS6. Launch per fold:
+    python3 src/train/train_study.py --npz-root data/processed/npz384_study \
+      --series-csv data/raw/train_series.csv --labels data/processed/labels_train_v7_pl.parquet \
+      --train-csv data/raw/train.csv --fingerprints data/processed/fingerprints.csv \
+      --fold K --epochs 6 --bs 2 --accum 2 --lr 6e-5 --k-slices 16 \
+      --max-series 6 --workers 12 --out runs/mil384_v7_fK
+  (~50GB/GPU at bs2; est 5-7h/fold on a free H100 — start all 4 folds at
+  allocation start, not mid-walltime.)

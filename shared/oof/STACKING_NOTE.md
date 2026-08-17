@@ -26,3 +26,12 @@ exactly what the saturated uniform ensembles (~0.896 OOF ceiling) lacked.
 3. If LGBM/logistic study-aggregator is trained, D-family per-series stats are NOT available
    (MIL predicts study-level only) — include D as study-level prob features.
 4. Candidate LB probe when ready: v6 pair + 0.25-0.33x weighted D pair.
+
+## Addendum (r5 families added)
+D3 = mil_cnxtsmall_288 (gold 0.894 family avg; fold0 0.9098 = best single D fold),
+D4 = mil_maxvit_224. Six-family gold-57 mixes: all L-heavy variants cluster at
+0.9163–0.9168 (vs L pair 0.9143) — D contribution robust (~+0.002) but composition
+within D doesn't matter at n=57; pick by OOF weight search. Cross-corr: D3/D4 vs L
+= 0.87 (D1/D2 remain most diverse at 0.84–0.855). All-D-uniform overweighting hurts
+(0.9129) — keep D at 1/4 to 1/3 pool weight. devansh weights being packaged to
+Kaggle dataset `devansh26/rsna-knee-weights-r2` (new version) for kernel integration.

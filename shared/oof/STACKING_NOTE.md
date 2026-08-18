@@ -35,3 +35,23 @@ within D doesn't matter at n=57; pick by OOF weight search. Cross-corr: D3/D4 vs
 = 0.87 (D1/D2 remain most diverse at 0.84–0.855). All-D-uniform overweighting hurts
 (0.9129) — keep D at 1/4 to 1/3 pool weight. devansh weights being packaged to
 Kaggle dataset `devansh26/rsna-knee-weights-r2` (new version) for kernel integration.
+
+## Addendum 2 (2026-08-15, devansh) — vs the actual v10/LB-0.946 pair
+| mix | gold-57 |
+|---|---|
+| v10 pair (cnxb384_v7 + v2m384_v6) | 0.9254 |
+| + D 3-fam (effv2s, srx50, cnxts) @ 1/4 pool | 0.9269 |
+| + Lc7 (cnxt384_v7) + D 3-fam | **0.9274** |
+
+Key structural fact: v10 pair internal OOF corr = **0.978** (near-redundant);
+D-vs-L corr = 0.85. The pair is diversity-starved — that's where the stack gain lives.
+
+**Probe recommendation:** v10 pair + cnxt384_v7 + D families, D at ~1/4 pool weight.
+Runtime guard for the 9h kernel: our MIL ckpts cost ~12-15 min each on T4 (288px,
+K=20, no TTA needed — TTA is flat for MIL); if budget is tight, drop to D1+D3
+(8 ckpts, gold 0.9263, still +0.001). Our weights: Kaggle dataset
+devansh26/rsna-knee-weights-r2 (latest version: r4_v2/r4_v3/r5_cnxts × 4 folds
++ src/predict.py + src/model.py — study-level probs, mean over ckpts; needs
+DICOM->320px/140mm decode path identical to predict.py's load_series_volume).
+Since v11 showed OOF->LB mapping saturating: judge this probe on LB directly;
+gold + diversity are the offline evidence.

@@ -274,3 +274,12 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   — LS6 will train 2-3 more study-MIL@384 diversity families (seresnext50, effnetv2_s,
   maxvit @384) on v7 targets for the stack. 384px/140mm preprocessing already launching
   on LS6 so data is ready the moment targets land.
+- 08-25 ~05:30 UTC-5: milb384e10_v7 (cnxb MIL) DONE — best solo MIL (weak-val
+  0.9520-0.9551, OOF 0.9062, gold 0.9185) but corr 0.966 vs mil384e10 ->
+  REDUNDANT: no combo beats v12 config (gold 0.9291). MIL family space closed
+  at one member. Series 10-ep retrain ruled out (pair curves flat at ep5).
+  shared/labels now has v7/v6 parquets for LS6 lanes (devansh ask).
+  NEW LANE: sw3d224e10_v7 — swin3d_t (Kinetics-400 video pretrain) per-series
+  3D encoder + our series-attn head (src/train/study3d_{model,dataset}.py +
+  train_study3d.py, smoke-tested); T=32 slices @224, 10 ep, 4 folds on H100s.
+  The 'video pretraining' pivot lever — structurally new vs everything else.

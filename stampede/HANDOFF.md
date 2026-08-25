@@ -316,3 +316,13 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   4-fold family beats cnxb offline, candidate component-upgrade submission;
   NOTE runtime: cnxl inference ~2x cnxb -> cnxl+v2m+TTA ~84s stub = TIMEOUT
   territory; viable shapes: cnxl-4-only+TTA (~56s) or cnxl+v2m TTA-on-cnxl-only.
+- cnxl384_v7 COMPLETE (convnext_large, cnxb recipe, bs4, ~5h/4folds): per-fold
+  weak-val 0.9595-0.9638 (all > cnxb). Family TTA eval: OOF 0.9141 = ENTIRE
+  v10 pair, gold 0.9276 (+0.0022). v2m adds ~nothing to it (cnxl+v2m 0.9147/
+  0.9257). K16-inference on K24 ckpts ~free (pair OOF -0.0006, gold flat).
+  shared/oof has oof_/gold_cnxl384_v7.csv.
+- SUBMITTED v14 18:38 UTC: cnxl 4-fold ALONE + TTA @K16-infer (kernel v20:
+  SERIES_PATTERNS=cnxl_f*, INFER_K_CAP=16; weights v11 adds cnxl_f0-3,
+  best_f*/mil_f* untouched so kernel v16 = v10 stays reproducible for finals).
+  Stub 45s/3 studies (safe). Tests: does a stronger single family move the
+  hidden test where ensemble diversity didn't? 1/5 subs left today.

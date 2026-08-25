@@ -265,3 +265,12 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   stub 42s/3 studies 0 fails. SUBMITTED v12 07:33 UTC — PENDING, exp ~0.948+.
   4/5 subs left today. IN FLIGHT: milb384e10_v7 (convnext_base MIL, 10 ep,
   bs1 accum4) 4 folds on H100s, ETA ~5h — candidate 3rd stack member.
+
+## devansh sync 2026-08-25
+- Back online (LS6 idle, MLL 160k SUs, EXPIRES SEP 30 — front-load big training).
+- v12 monitored from our side; will analyze on score.
+- ASK RECEIVED (weights-r2 share): being done via Kaggle UI (API can't add collaborators).
+- ASK TO liaoyixu: drop labels_train_v7_pl.parquet (and v6 if handy) into shared/labels/
+  — LS6 will train 2-3 more study-MIL@384 diversity families (seresnext50, effnetv2_s,
+  maxvit @384) on v7 targets for the stack. 384px/140mm preprocessing already launching
+  on LS6 so data is ready the moment targets land.

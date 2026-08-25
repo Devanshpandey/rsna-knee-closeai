@@ -283,3 +283,12 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   3D encoder + our series-attn head (src/train/study3d_{model,dataset}.py +
   train_study3d.py, smoke-tested); T=32 slices @224, 10 ep, 4 folds on H100s.
   The 'video pretraining' pivot lever — structurally new vs everything else.
+- 08-25 ~07:00 UTC-5: sw3d224e10_v7 (swin3d_t Kinetics) DONE — most diverse
+  family yet (corr 0.935 vs pair AND vs MIL) but solo gold 0.9136: every
+  v12+sw3d combo is flat-to-negative (0.9286-0.9290 vs 0.9291). 6-ep MIL
+  sibling also flat. VERDICT: Stampede-side family space is SATURATED at
+  v12 = pair(noTTA) + mil384e10@1/3, offline gold 0.9291. GPUs idled for
+  the user's other work. Waiting on: v12 LB score (>8h in), devansh's
+  weights-r2 share (D-fam kernel integration; note offline D3 added ~0
+  over e10-MIL: 0.9292), and LS6's new MIL@384 families (the main hope
+  for a real stack step — our own diversity attempts all landed redundant).

@@ -304,3 +304,15 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
 - FLAG for lab-server/devansh: external-data rules check (MRNet/fastMRI knee
   pretraining is the next structural lever; forum thread must confirm
   external data policy before we invest).
+- v13 RESULT: **0.945** = v12. DECOMPOSITION ANSWER: mirror TTA is worth
+  ~+0.001 LB (v10 0.946 with TTA vs v13 0.945 without) though offline read
+  it as worthless; MIL@1/3 was LB-NEUTRAL (v12=v13). Rules going forward:
+  (a) SERIES_TTA stays ON in every kernel (runtime budget: pair+TTA=56s stub);
+  (b) hidden test rewards robustness/averaging beyond what weak-val OR gold
+  can see — TTA-like variance reduction is a live LB lever, ensemble
+  diversity is not. 2/5 subs left today. LB config unchanged: v10/kernel-v16.
+- IN FLIGHT: cnxl384_v7 (convnext_large, exact cnxb recipe, bs4) — ep2 golds
+  0.919-0.927 ALREADY at cnxb-final levels, weak-val 0.957-0.961. If the
+  4-fold family beats cnxb offline, candidate component-upgrade submission;
+  NOTE runtime: cnxl inference ~2x cnxb -> cnxl+v2m+TTA ~84s stub = TIMEOUT
+  territory; viable shapes: cnxl-4-only+TTA (~56s) or cnxl+v2m TTA-on-cnxl-only.

@@ -292,3 +292,15 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   weights-r2 share (D-fam kernel integration; note offline D3 added ~0
   over e10-MIL: 0.9292), and LS6's new MIL@384 families (the main hope
   for a real stack step — our own diversity attempts all landed redundant).
+- v12 RESULT: **0.945** (< v10 0.946). The gold-57 yardstick (+0.0037) ALSO
+  failed to predict LB direction — both offline yardsticks are now confirmed
+  uninformative at this margin (all our "gains" are inside gold sigma 0.0125).
+  v12 changed 2 vars (noTTA + MIL); decomposition probe v13 = kernel v19
+  (pair noTTA, W_MIL=0) launched — isolates TTA. If v13=0.946: MIL hurt, TTA
+  free (bigger runtime budget stands). If 0.945: mirror TTA is load-bearing
+  on hidden test; revert to TTA in all future kernels. BEST KNOWN CONFIG
+  remains v10 = kernel VERSION 16 + current weights ds (v16 ignores mil_f*;
+  submitting -v 16 reproduces v10 exactly). Keep for finals.
+- FLAG for lab-server/devansh: external-data rules check (MRNet/fastMRI knee
+  pretraining is the next structural lever; forum thread must confirm
+  external data policy before we invest).

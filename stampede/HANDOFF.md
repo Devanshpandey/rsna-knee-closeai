@@ -223,3 +223,36 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
       --max-series 6 --workers 12 --out runs/mil384_v7_fK
   (~50GB/GPU at bs2; est 5-7h/fold on a free H100 — start all 4 folds at
   allocation start, not mid-walltime.)
+
+## Session 2026-08-24/25 (fresh 48h allocation, ends 08-26 14:28 UTC-5)
+- LB check 08-24: we fell to ~#8 at 0.946 (Brandon Low 0.952, MKhlystun 0.948,
+  2x 0.947, pack at 0.946). v11 RESULT (unrecorded before): 0.945 — top-4
+  aggregation LOST to 0.5(mean+max) on LB despite +0.0009 OOF. Kernel reverted
+  to mean+max. OOF yardstick decoupling confirmed twice now.
+- mil384_v7 lane COMPLETE (4 folds, ~1.5h/fold on H100 — NOT 5-7h as
+  estimated): per-fold best weak-val 0.9458/0.9453/0.9347/0.9406 all at ep5
+  (still rising). Family export in shared/oof (oof_/gold_mil384_v7.csv):
+  solo OOF(v5-yard) 0.8926 / gold-57 0.9118 — weak solo, but corr vs v10 pair
+  0.937 and STACKS: pair+MIL gold 0.9254->0.9272 (+0.0018, flat 1/5-1/3 wt).
+- PRESET STACK GRID (scratch, no search — gold-57 prob-avg):
+  pair 0.9254 | +mil384 0.9272 | +D3 0.9269 (devansh repro'd) |
+  pair+Lc7+D3 0.9274 | pair+D3+mil384 0.9287 (BEST) | +Lc7 adds nothing
+  once mil384 in (0.9286) -> Lc7's 4 series ckpts NOT needed, saves runtime.
+- KERNEL v18 STAGED (kernel_submit_meta/rsna-submit-v1.py): MIL inference
+  path added (loads mil_f*.pt, KneeStudyModel, K16 S6 no-TTA, bit-exact vs
+  trainer eval — tested), aggregation reverted to 0.5(mean+max) (v10-proven),
+  SERIES_TTA + W_MIL=0.2 constants. Needs study_model.py added to
+  rsna-knee-code dataset before push.
+- RUNTIME BUDGET: pair+TTA ~= 56s stub ~= 8h hidden (tight). pair+TTA+mil384
+  ~= 67s stub — RISKY. Options: drop series TTA (halves series cost; penalty
+  UNMEASURED — measuring next on freed GPUs), or 2-fold MIL. D3 add-on
+  (+12 ckpt @288) only fits with no-TTA series.
+- @devansh ACTION NEEDED: share Kaggle dataset devansh26/rsna-knee-weights-r2
+  with user liaoyixu (403 for us now) — required to attach D families to the
+  submission kernel. Also: repo lonestar predict.py decodes WITHOUT the 140mm
+  physical crop / canonicalization — confirm the dataset src/predict.py is the
+  authoritative decode for r4/r5 ckpts, and whether our canonical 384->resize
+  320 volumes can feed them (would save a second DICOM decode pass in-kernel).
+- IN FLIGHT: mil384e10_v7 (same recipe, 10 ep) 4 folds on 4xH100, ETA ~2.5h
+  from 01:00 UTC-5 08-25. Then: no-TTA pair eval, final config pick, weights
+  ds v10 (v9 files + mil_f*.pt), kernel push, stub check, LB probe.

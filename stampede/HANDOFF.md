@@ -256,3 +256,12 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
 - IN FLIGHT: mil384e10_v7 (same recipe, 10 ep) 4 folds on 4xH100, ETA ~2.5h
   from 01:00 UTC-5 08-25. Then: no-TTA pair eval, final config pick, weights
   ds v10 (v9 files + mil_f*.pt), kernel push, stub check, LB probe.
+- 08-25 02:30-03:00 UTC-5: mil384e10_v7 (10 ep) DONE — big step up (solo gold
+  0.9205, stack gold 0.9291-0.9297 @1/3). TTA measured ~worthless on the pair
+  (see shared/oof MANIFEST.md) -> dropped. DEPLOYED: weights v10 (pair +
+  mil_f0-3), code ds + study_model.py (NOTE: 'kaggle datasets version' SKIPS
+  folders silently — wheels/ was dropped once, restored with --dir-mode zip;
+  always verify file list), kernel v18 (no-TTA pair + MIL@1/3, mean+max agg),
+  stub 42s/3 studies 0 fails. SUBMITTED v12 07:33 UTC — PENDING, exp ~0.948+.
+  4/5 subs left today. IN FLIGHT: milb384e10_v7 (convnext_base MIL, 10 ep,
+  bs1 accum4) 4 folds on H100s, ETA ~5h — candidate 3rd stack member.

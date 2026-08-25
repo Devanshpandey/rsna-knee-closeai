@@ -16,3 +16,4 @@ cnxt384_v8,convnext_small.fb_in22k_ft_in1k,384,v8_pl(trust-map:T_dev+v7oof),1716
 v2m384_v8,tf_efficientnetv2_m.in21k_ft_in1k,384,v8_pl(trust-map:T_dev+v7oof),17161916260226758772,2026-08-14,4folds
 cnxb384_v7,convnext_base.fb_in22k_ft_in1k,384,v7_pl,17161916260226758772,2026-08-15,4folds
 mil384_v7,convnext_small+study-MIL(slice-attn->series-attn),384,v7_pl,17161916260226758772,2026-08-25,"4folds; no TTA; stampede recipe (K16 max-series6 6ep EMA bf16)"
+mil384e10_v7,convnext_small+study-MIL(slice-attn->series-attn),384,v7_pl,17161916260226758772,2026-08-25,"4folds; no TTA; 10-ep OneCycle (6-ep version superseded)"

@@ -17,3 +17,13 @@
 - per-fold best weak-val (v7 targets, inflated): 0.9458/0.9453/0.9347/0.9406, all at ep5
   (still rising) -> 10-ep retrain launched 2026-08-25 on Stampede3.
 - trained 2026-08-24 Stampede3 4xH100, ~1.5h/fold; ckpts /scratch/09059/xliaoyi/kaggle/runs/mil384_v7_f*/
+
+# mil384e10_v7 (2026-08-25) — 10-epoch retrain of mil384_v7, same recipe
+- per-fold best weak-val 0.9531/0.9533/0.9433/0.9532 (vs 6-ep 0.9458/0.9453/0.9347/0.9406)
+- solo OOF(v5-yard) 0.9026 / gold-57 0.9205; corr vs v10 pair 0.950
+- STACK: pair+MIL@1/3 gold-57 0.9297 (TTA pair) / 0.9291 (no-TTA pair) vs pair 0.9254
+- TTA MEASUREMENT (pair families, H100 eval): mirror TTA worth ~nothing —
+  cnxb384_v7 noTTA OOF 0.9121/gold 0.9268 (TTA 0.9126/0.9255), v2m384_v6 noTTA
+  0.9114/0.9238 (TTA 0.9122/0.9223). Dropping TTA halves series kernel cost.
+- DEPLOYED as submission v12 2026-08-25 07:33 UTC (kernel v18, weights v10):
+  pair no-TTA + mil384e10@1/3, stub 42s/3 studies (v10: 56s). PENDING.

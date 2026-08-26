@@ -21,3 +21,4 @@ milb384e10_v7,convnext_base+study-MIL,384,v7_pl,17161916260226758772,2026-08-25,
 sw3d224e10_v7,swin3d_t(Kinetics-400)+series-attn,224,v7_pl,17161916260226758772,2026-08-25,"4folds; T=32 slices; no TTA; most diverse (corr 0.935) but solo too weak — adds nothing over v12; not deployed"
 cnxl384_v7,convnext_large.fb_in22k_ft_in1k,384,v7_pl,17161916260226758772,2026-08-25,"4folds TTA K24; BEST single family: OOF 0.9141 (= old pair), gold 0.9276; per-fold weak-val 0.9595-0.9638"
 cnxxl384_v7,convnext_xlarge.fb_in22k_ft_in1k,384,v7_pl,17161916260226758772,2026-08-26,"4folds TTA K24; best-family OOF 0.9150 / gold 0.9255; ~1.7x cnxl inference — OOF/stack asset only"
+cnxl448_v7,convnext_large@448-upscaled,448,v7_pl,17161916260226758772,2026-08-26,"4folds TTA K24; upscale-448 NEGATIVE offline: OOF 0.9138/gold 0.9244 (< cnxl@384 0.9141/0.9276); true-448 decode probe skipped"

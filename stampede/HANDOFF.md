@@ -326,3 +326,14 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   best_f*/mil_f* untouched so kernel v16 = v10 stays reproducible for finals).
   Stub 45s/3 studies (safe). Tests: does a stronger single family move the
   hidden test where ensemble diversity didn't? 1/5 subs left today.
+- **v14 RESULT: 0.947** — FIRST LB GAIN since 08-12. cnxl384_v7 4-fold ALONE
+  (TTA, K16-infer, 45s stub) beats the 8-model v10 pair. COMPONENT CAPACITY
+  moves the hidden test; ensemble tweaks don't. Best config = kernel v20 +
+  weights v11 (finals pointer updated from v16/v10).
+- cnxxl384_v7 (xlarge) DONE: fold weak-vals 0.9600-0.9636 = TIED with cnxl —
+  capacity curve FLAT at large->xlarge, and xlarge is ~1.7x inference cost.
+  OOF export pending eval; stack asset only. Next capacity step needs >384px
+  (lab server: preprocess npz448?) or a different scaling axis.
+- NEXT PROBES (single-variable on v14): cnxl + mil384e10 @1/5 (45+11=56s stub,
+  proven-safe runtime) if offline gold >= cnxl alone; cnxl+xlarge stack
+  offline-check when eval lands. New UTC day: 5 subs available.

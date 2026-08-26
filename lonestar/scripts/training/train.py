@@ -66,6 +66,8 @@ def main() -> None:
     ap.add_argument("--crop", type=int, default=224)
     ap.add_argument("--workers", type=int, default=10)
     ap.add_argument("--smoke", action="store_true", help="tiny run to validate plumbing")
+    ap.add_argument("--init-ckpt", default=None,
+                    help="warm-start backbone+pools from a pretrain checkpoint (head excluded)")
     args = ap.parse_args()
 
     device = "cuda"
@@ -93,6 +95,12 @@ def main() -> None:
     print(f"fold {args.fold}: train {len(ds_tr)} | val {len(ds_va)} | gold {len(ds_gold)}", flush=True)
 
     model = KneeStudyModel(args.backbone).to(device)
+    if args.init_ckpt:
+        ck0 = torch.load(args.init_ckpt, map_location="cpu", weights_only=False)
+        sd = {k: v for k, v in ck0["model"].items() if not k.startswith("head.")}
+        missing, unexpected = model.load_state_dict(sd, strict=False)
+        print(f"warm-start from {args.init_ckpt}: loaded {len(sd)} tensors "
+              f"(missing {len(missing)}, unexpected {len(unexpected)})", flush=True)
     ema = torch.optim.swa_utils.AveragedModel(
         model, avg_fn=lambda a, c, n: 0.999 * a + 0.001 * c, use_buffers=True)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-2)

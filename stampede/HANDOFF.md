@@ -374,3 +374,8 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
 - eval_ensemble.py + dataset.py/train_series.py now support --img-size /
   args.img_size (upscale training + size-aware eval); kernel v22 lineage has
   img_size-aware size detection (kernel code keeps it — harmless for 384 ckpts).
+- Offline note for when weights-r2 access lands: cnxl + D3(288-MIL fams) =
+  gold 0.9292 (+0.0016) / OOF 0.9125 (-0.0016), corr 0.876 — most diverse
+  pairing available but same mixed-yardstick ~+0.002 class that was LB-neutral
+  3x. LOW-priority probe; prefer spending subs on genuinely new components
+  (MRNet-warm-started families, true-448).

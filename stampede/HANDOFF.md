@@ -337,3 +337,14 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
 - NEXT PROBES (single-variable on v14): cnxl + mil384e10 @1/5 (45+11=56s stub,
   proven-safe runtime) if offline gold >= cnxl alone; cnxl+xlarge stack
   offline-check when eval lands. New UTC day: 5 subs available.
+- v15 RESULT: **0.947** = v14 (MIL add LB-neutral again — 3rd confirmation
+  that ensemble adds are invisible; only components move LB). Best = v14
+  (kernel v20, cnxl alone). cnxle10 (10-ep cnxl) FLAT vs 6-ep (0.9597-0.9636)
+  — series converge at 6 ep, confirmed at large too.
+- NEW LANE cnxl448_v7: convnext_large trained on 384npz UPSCALED to 448
+  (dataset.py/train_series.py grew an --img-size arg; ckpt args carry it).
+  At inference the kernel can decode DICOM at TRUE 448 (preprocess is
+  size-parametric) -> genuine test-res gain (FixRes). Kernel v22 will need
+  size detection via args.img_size. Kernel budget: cnxl@448 K16+TTA ~61s
+  (borderline) / K12 ~46s (safe; K12 penalty to be measured offline).
+  4 folds on H100s, ~4.5h; allocation ends 08-26 14:28 UTC-5.

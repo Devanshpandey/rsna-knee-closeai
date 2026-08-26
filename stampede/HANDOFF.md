@@ -348,3 +348,29 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   size detection via args.img_size. Kernel budget: cnxl@448 K16+TTA ~61s
   (borderline) / K12 ~46s (safe; K12 penalty to be measured offline).
   4 folds on H100s, ~4.5h; allocation ends 08-26 14:28 UTC-5.
+
+## Session end-state 2026-08-26 (node expires 14:28 UTC-5) — READ BEFORE RESUMING
+- **BEST CONFIG: v14 = LB 0.947** (kernel VERSION 20 + weights ds v11+;
+  = cnxl_f0-3 @384, TTA, K16-infer, mean+max agg, no MIL). kernel_submit_meta
+  file is reverted to exactly this config — a plain push_kernel.py + submit
+  reproduces it. v10 (0.946, pair) remains reproducible via kernel VERSION 16.
+- Session LB probes: v12 0.945 (noTTA+MIL), v13 0.945 (noTTA — TTA is +0.001,
+  keep always), v14 0.947 (cnxl component upgrade — CAPACITY is the lever),
+  v15 0.947 (MIL add neutral 3rd time). 4/5 subs left today (UTC 08-26).
+- cnxl448 (384-upscaled-448 training): offline NEGATIVE (gold 0.9244-0.9255 vs
+  cnxl@384 0.9276 at every K) — true-448-decode probe SKIPPED. Real >384
+  needs lab-server DICOM re-preprocess (npz448_study) — measurable offline,
+  still the cleanest capacity-adjacent lever. Weights ds v12 carries
+  cnxl448_f* anyway (unused unless a kernel points at them).
+- Trained this session (all on /scratch runs/, OOF in shared/oof):
+  mil384_v7 + mil384e10 (10ep >> 6ep for MIL), milb384e10 (redundant),
+  sw3d224e10 (Kinetics, too weak), cnxl384_v7 (BEST family: OOF 0.9141 =
+  old pair, gold 0.9276), cnxxl (ties cnxl, 1.7x cost), cnxle10 (10ep flat
+  for series), cnxl448 (negative). Capacity curve: small<base<large=xlarge.
+- NEXT (new allocation / lab server / LS6): (1) devansh MRNet-pretrained MIL
+  + r5@384 diversity families — warm-start could lift solo quality to where
+  diversity finally pays; (2) lab server npz448 preprocess -> cnxl@true448;
+  (3) his weights-r2 share for in-kernel D-fams; (4) keep judging on LB only.
+- eval_ensemble.py + dataset.py/train_series.py now support --img-size /
+  args.img_size (upscale training + size-aware eval); kernel v22 lineage has
+  img_size-aware size detection (kernel code keeps it — harmless for 384 ckpts).

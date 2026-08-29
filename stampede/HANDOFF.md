@@ -445,3 +445,38 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   is what correctly flagged the upscale-448 lane as not-better (1/4). Treat
   gold-58/OOF as no-catastrophe gates only. The real justification is that
   true-448 is a COMPONENT CAPACITY change — the one class that has moved this LB.
+- **TRUE-448 VERDICT: NEGATIVE (gate not met) — NO SUBMISSION SPENT.**
+  cnxl448t_v7 4 folds complete (runs/cnxl448t_v7_f*, ~5h on 4xH100). Best
+  weak-val per fold vs the cnxl384_v7 baseline:
+      f0 0.9625 vs 0.9631 (-0.0006)   f1 0.9624 vs 0.9638 (-0.0014)
+      f2 0.9595 vs 0.9595 (+0.0000)   f3 0.9637 vs 0.9634 (+0.0003)
+  2/4 at-or-above, mean -0.00042 — the pre-registered gate (>=3/4) is NOT met.
+  Per-fold gold-58 at ep5: 0.9226/0.9247/0.9228/0.9251 (single-model, healthy —
+  the family is not broken, it is simply at parity).
+  **RESOLUTION IS A DEAD AXIS, now measured twice**: 384-upscaled-to-448 was
+  negative, and a genuine 448 DICOM decode is flat. Combined with large=xlarge
+  at 384, BOTH obvious capacity axes (parameters, pixels) are saturated for this
+  140mm-crop task. Do not spend more GPU-hours on >384 resolution.
+- NEW LANE (in flight): PRETRAINING-QUALITY screen at the proven 384 operating
+  point — the capacity axis never tested. Note the current LB-0.947 backbone
+  `convnext_large.fb_in22k_ft_in1k` is the **224-trained** checkpoint fed 384px
+  images; timm also ships a 384-native finetune of the identical architecture.
+  Screening 4 backbones on FOLD 0 ONLY (gate: fold-0 weak-val vs 0.9631), all
+  with the exact cnxl384_v7 recipe, runs/screen_<name>_f0:
+      cnxl384n  convnext_large.fb_in22k_ft_in1k_384      (bs4)   ~3h
+      cnxldino  convnext_large.dinov3_lvd1689m           (bs4)   ~3h
+      cnxv2l    convnextv2_large.fcmae_ft_in22k_in1k_384 (bs2 a2) ~7.5h
+      mvitl     maxvit_large_tf_384.in21k_ft_in1k        (bs2 a2) ~8.5h
+  The first three are convnext_large (197.7M) = IDENTICAL kernel inference cost
+  to the current model, so a winner ships with zero runtime re-budgeting
+  (K16@384, 45s stub, proven). maxvit is 211.8M and a different arch — if it
+  wins, re-measure the stub before submitting.
+  Plan: whichever of the two fast candidates clears fold-0 baseline, train its
+  remaining 3 folds on the freed GPUs, then apply the same >=3/4 gate.
+  CAVEAT: maxvit uses BatchNorm, so its bs2+accum2 run is confounded vs the bs4
+  baseline; convnextv2 is LayerNorm/GRN only, so bs2+accum2 there is equivalent.
+- CODE CHANGE: `train_series.py` gained `--accum` (default 1, no behavior change
+  at the default; OneCycle total_steps is now epochs*(len(dl_tr)//accum) and the
+  step/EMA/clip happen on accumulation boundaries). Needed because convnextv2
+  and maxvit OOM at bs4/K24/384 on a 95GB H100; accumulation keeps the effective
+  batch at 4 so the screen stays single-variable.

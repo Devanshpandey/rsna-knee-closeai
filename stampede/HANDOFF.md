@@ -379,3 +379,69 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   pairing available but same mixed-yardstick ~+0.002 class that was LB-neutral
   3x. LOW-priority probe; prefer spending subs on genuinely new components
   (MRNet-warm-started families, true-448).
+
+## Session 2026-08-29 (allocation ends 08-30 ~23:20 UTC-5) — TRUE-448 LANE
+- LB check 08-29: we are ~#7 at 0.947 (Brandon Low 0.952, Matteo Vitali 0.950,
+  Tiago Mazzutti 0.950, MKhlystun 0.948, Scott Willis 0.948, then a 0.947 pack
+  incl. us). Best config unchanged: v14 = kernel VERSION 20 + weights v11+
+  (cnxl_f0-3 @384, TTA, K16-infer, mean+max agg, no MIL).
+- **PREPROCESSING IS NO LONGER LAB-SERVER-ONLY.** Downloaded the full 265 GB
+  competition zip to Stampede3 (`kaggle competitions download`, 25 min @190MB/s,
+  data/raw_zip/). Installed the decode deps into the igc env: pydicom pebble
+  opencv-python-headless pylibjpeg pylibjpeg-libjpeg pylibjpeg-openjpeg
+  python-gdcm (the JPEG plugins are REQUIRED — pydicom 3 alone cannot decode
+  this competition's compressed pixel data). Decoding all 24,371 series at any
+  --size takes **~6 minutes** on the 96-core H100 node with --workers 90.
+  The ">384px needs a lab-server re-preprocess" blocker in every prior handoff
+  was wrong by three orders of magnitude — any resolution is now cheap to test.
+- npz448 BUILT (data/processed/npz448, per-series layout, 87 GB): 24,369 ok,
+  the SAME 2 corrupt series that the 384 set skipped. Verified single-variable
+  vs npz384_study: identical series set, and laterality/mirrored/phys_crop/
+  have_geom/n_raw agree 1.000000 on all 24,369; a fresh 448 volume downscaled
+  to 384 matches the old 384 volume at corr 0.9994-0.9999. Only pixels differ.
+  No repack needed — dataset.py/eval_ensemble.py both accept npz_root/<study>/
+  <series>.npz directly and read series_meta.parquet from the npz root.
+- IN FLIGHT: cnxl448t_v7 = convnext_large.fb_in22k_ft_in1k on TRUE 448, exact
+  cnxl384_v7 recipe with ONLY resolution changed (v7_pl targets, 6 ep, bs 4,
+  lr 9e-5, K=24, EMA 0.999, bf16, pinned folds), 4 folds on 4xH100, ~0.52 s/it,
+  78.6/95 GB per GPU, ETA ~6h from 13:00 UTC-5 08-29. runs/cnxl448t_v7_f{0..3},
+  logs/cnxl448t_f*.log. Launched WITH `--img-size 448` — see the blocker below.
+- **NEW KERNEL BLOCKER (found by audit before it could burn a sub).**
+  rsna-submit-v1.py:160-161 resolves decode size as
+    `int(a.get("img_size") or 0) or (384 if "384" in str(a.get("npz_root","")) else DEFAULT_SIZE)`
+  with DEFAULT_SIZE=320 (:86). A 448 checkpoint whose npz_root is
+  ".../npz448" and whose img_size is 0/absent contains no "384" substring, so
+  the kernel SILENTLY decodes the hidden test at 320px — no error, and a
+  deceptively FAST stub (~30s) that reads as "safe". Training with an explicit
+  `--img-size 448` stamps args.img_size=448 and defuses it (verified no-op on
+  native-448 data: dataset.py:98 guards on x.shape[-1] != img_size).
+  NOTE the v14 family (cnxl384_v7) has NO img_size key at all — its correct 384
+  decode depends ENTIRELY on the "384" substring in npz_root. Do not "clean up"
+  that expression without re-checking v14.
+- Kernel budget for 4-fold cnxl@448 + mirror TTA (cost model calibrated to the
+  four measured stub anchors v10 56s / v12 42s / v14 45s / v15 56s; 448/384
+  forward ratio MEASURED at 1.367 on GPU, matching FLOPs 1.361):
+    K16 -> 58.7s stub -> 8.1-8.4h hidden = TOO TIGHT (the kernel's printed
+      window starts AFTER the ~2.5 GB cu118 wheel install, so budget ~8.6h not 9h)
+    **K14 -> 52.3s stub -> 7.4h, 13-14% margin = RECOMMENDED**
+    K12 -> 45.9s stub -> 6.6h, 23% margin = fallback
+  Only 0.5% of series have <=14 usable slices (vs 3.0% at <=16), so K14 is still
+  genuinely sampling. channels_last measured at exactly 1.000x — that lever is
+  empty. Never buy runtime by dropping mirror TTA (LB-measured +0.001).
+- DEPLOY CHECKLIST for this lane (do NOT skip): set SERIES_PATTERNS to the new
+  filename (use cnxl448t_f*.pt — do NOT reuse cnxl448_f*, weights ds v12 already
+  ships the offline-NEGATIVE upscale-448 ckpts under that name), INFER_K_CAP=14,
+  **W_MIL=0** (any mil_f* forces 384 into the size set = a second full resize
+  pass per series), and KEEP a file literally named best_f0.pt in the weights
+  dataset (kernel:27 `WEIGHTS = find_input("best_f0.pt").parent` raises
+  FileNotFoundError at import otherwise). Stub gate: PASS <=53s; if >56s drop to
+  K12; **if it prints 30-35s ABORT — that is the 320px fallthrough signature.**
+- DECISION RULE for spending a submission on this family (offline yardsticks are
+  4-for-4 useless at this margin — a paired bootstrap over the five known LB
+  outcomes shows OOF read significant-POSITIVE for v10 which was LB-flat, and
+  NEGATIVE for v14, the only probe that ever gained): judge on **per-fold best
+  weak-val vs cnxl384_v7's 0.9631/0.9638/0.9595/0.9634, require >=3/4 at or
+  above**. That is the only offline metric that has ever agreed with LB, and it
+  is what correctly flagged the upscale-448 lane as not-better (1/4). Treat
+  gold-58/OOF as no-catastrophe gates only. The real justification is that
+  true-448 is a COMPONENT CAPACITY change — the one class that has moved this LB.

@@ -599,3 +599,78 @@ VERSION 20 + weights v11+ = 0.947.
 Artifacts on /scratch: runs/baseline_replicate{,2,3,4,5}_f0 (the noise floor),
 runs/cnxl448t_v7_f{0-3}, runs/screen_cnxv2l_f0 + runs/cnxv2l_v7_f{1,2,3},
 runs/screen_cnxl384n_f0 + runs/cnxl384n_v7_f1, data/processed/npz448.
+
+## 2026-08-30 evening — SEED-CALIBRATION SUBMITTED + v9 TARGET LANE (fresh 48h alloc, node c562-010, ends ~09-01 20:35)
+Standing at session start: **CloseAI 0.947, rank 9** (Brandon Low 0.952; Vitali
+/Mazzutti 0.950; MKhlystun/Willis/Molvaer 0.948). We have not submitted since 08-26.
+
+### seedB is COMPLETE — the LB seed-noise experiment is now runnable
+The previous session finished a config-identical, differently-seeded 4-fold rebuild
+of the LB-0.947 cnxl384_v7 build. Verified by diffing checkpoint args: the ONLY
+differences are `accum` None->1 and `img_size` None->0, both new-arg defaults that
+are exact no-ops (`img_size` only resizes when the npz res differs; npz384 is 384).
+
+    fold        v14 (seed A, on LB @0.947)   seedB (seed B)
+    0              0.96310                     0.96262   <- runs/baseline_replicate_f0
+    1              0.96376                     0.96204
+    2              0.95952                     0.95940
+    3              0.96335                     0.96236
+    mean           0.96243                     0.96161   (-0.00082, 4/4 folds lower)
+
+NOTE seedB is uniformly a hair below seed A offline. Fold 0 is fine (its 0.96262 is
+the first of the 5 replicates, whose mean is 0.96277); the -0.00082 mean is carried
+mostly by f1 (-0.00172). Read the LB result with that in mind: seed A looks like a
+lucky draw across folds, so a seedB LB score BELOW 0.947 is expected and the
+question is only HOW FAR below.
+
+### The 3-point design now in flight (weights dataset v13, kernel version 22)
+All 8 checkpoints live in `liaoyixu/rsna-knee-weights` as `cnxl_f*.pt` (seed A) and
+`cnxlB_f*.pt` (seed B), so BOTH probes come off ONE dataset version — no version
+race. Model selection is by the kernel's `SERIES_PATTERNS` glob, so the arms are
+switched in the kernel script, not by re-uploading weights. Both arms run W_MIL=0.0
+so they sit directly against v14 (cnxl alone) = 0.947, undiluted by the MIL head.
+
+    v14  SERIES_PATTERNS=["cnxl_f*.pt"]                 = 0.947   (already on board)
+    v16  SERIES_PATTERNS=["cnxlB_f*.pt"]                = ?       (kernel version 22)
+    v17  SERIES_PATTERNS=["cnxl_f*.pt","cnxlB_f*.pt"]   = ?       (8-model seed ensemble)
+
+v16 answers the question flagged as unresolved in the 08-30 noise-floor entry: how
+big is the LB's OWN model-seed noise? Every past 0.001-0.002 LB step — including
+the "capacity is the lever" conclusion built on v14 0.947 vs v10 0.946 — is
+uninterpretable until this number exists. v17 tests whether seed-ensembling the
+best component buys anything; 8x384 @ K16 + TTA is comfortably inside the 9h
+ceiling (v14 was 4 models @ ~45s stub; 12 models @ K24 was the timeout).
+
+### GPU lane: cnxl384_v9 — the targets axis, single-variable
+Backbones are measured out (08-30 entry). Targets/labels is one of the two levers
+left. IMPORTANT — do not just reuse `labels_train_v8_pl.parquet`: v8 broke the
+chain that actually worked, TWICE. It rebased onto T_dev (the devansh extractor,
+a MEASURED-NEGATIVE source, see 08-12 Task-1) and it silently DROPPED the 12 `_w`
+per-label loss-weight columns (v8 parquet has 13 cols; v6/v7 have 25). Any v8-vs-v7
+comparison therefore moves two variables at once.
+
+Recovered the real v7 recipe numerically: v7 ~= 0.4*v5_aligned + 0.6*(v6-gen pair
+OOF), uncovered rows keep v5 exactly (mean recon err 0.005 at w=0.40; 0.0096 at
+0.35, 0.0151 at 0.50). So v9 is that same blend with ONLY the OOF generation
+swapped to our best available OOF:
+
+    python src/train/make_labels_v6.py \
+      --v5 data/processed/labels_train_30b_v5_aligned.parquet \
+      --oof preds/cnxl384_v7/oof_study_scores.csv \
+      --w-extractor 0.4 --out data/processed/labels_train_v9_pl.parquet
+
+(cnxl384_v7 OOF = pooled 0.9141 / gold 0.9276, vs the weaker v6-generation OOF that
+built v7.) v9 keeps 25 cols incl. `_w`, row order matches v5-aligned -> pinned folds
+intact. Coverage 4349/4407 (58 gold held out, correct).
+
+Launched via `run_v9_lane.sh` (in kaggle/): 4 folds, one per H100, exact cnxl384_v7
+recipe with ONLY --labels changed. ~0.39 s/it -> ~3h wall for all 4.
+Verified pinned folds loaded (f1 = 18366 train / 5667 val series, identical to
+seedB_f1). Deliberately did NOT pass --img-size, to keep it a true single-variable
+change vs v7/seedB (kernel's "384"-in-npz_root substring gives the right decode).
+
+### Gotcha added this session
+`kaggle datasets version` REPLACES the version with the dir contents, so the upload
+dir must carry every file you want to keep. weights_upload_v13 was built by
+hardlinking weights_upload_v12 (`cp -l`, no extra space on /scratch) and adding the
+4 cnxlB files.

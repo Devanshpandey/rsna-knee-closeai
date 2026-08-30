@@ -517,3 +517,85 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   the pattern in its cmdline). Use PIDs from /proc, or poll nvidia-smi memory.
   (2) `ps` truncates to ~80 cols with no TTY, so long training command lines are
   NOT greppable via ps — read /proc/<pid>/cmdline instead.
+
+## 2026-08-30 — **MEASURED THE NOISE FLOOR. THE OFFLINE GATE WAS MEASURING NOISE.**
+**READ THIS BEFORE TRUSTING ANY OFFLINE NUMBER IN THIS FILE, INCLUDING MINE.**
+
+`train_series.py` sets NO global seed — there is no `torch.manual_seed` anywhere
+(the only `seed=42` is in `make_folds`, which pinned folds bypass). So head init,
+batch order and augmentation draws differ every run. Nobody had ever measured what
+that is worth. I retrained the EXACT cnxl384_v7 fold-0 config 5 more times,
+changing nothing at all:
+
+    0.9631  <- the ORIGINAL run, i.e. the fold-0 number of the LB-0.947 model
+    0.9626  0.9629  0.9632  0.9625  0.9627   <- 5 replicates, identical config
+
+    mean 0.96283   sd 0.00028   range 0.9625-0.9632 (spread 0.0007)
+
+**The 0.9631 we have been gating against is a +0.95 sd draw, not the true centre.**
+95% of reruns of the very same recipe land within +/-0.0005 of 0.9628.
+
+Re-judged against the replicate mean instead of that one lucky run:
+
+    candidate              fold0     vs 0.9631      vs mean    sd units  verdict
+    true 448px             0.9625     -0.0006      -0.00033     -1.19     TIE
+    384-native weights     0.9625     -0.0006      -0.00033     -1.19     TIE
+    convnextv2 FCMAE       0.9623     -0.0008      -0.00053     -1.90     TIE
+
+Every delta I gated on yesterday was 0.0001-0.0008 — ENTIRELY INSIDE the noise
+band. convnextv2's fold 1 "failed" by 0.0001. That number decides nothing.
+
+**CORRECTION to my own 08-29 entry.** I wrote that the >=3/4-fold weak-val gate
+"is the only offline metric that has ever agreed with LB". That claim does not
+survive this measurement and should not be relied on. It was inferred from a
+handful of unreplicated single runs; at this effect size the gate resolves below
+its own measurement error and can fail on noise (convnextv2: 2/4, mean +0.00008 —
+dead even) or pass on noise. Ignore that sentence.
+
+FULL 4-FOLD VERDICTS, correctly stated as ties:
+    cnxl448t_v7  (true 448)   2/4, mean delta -0.00042  = -2.12 sd -> marginal,
+                              at worst a hair WORSE. Resolution still not a lever.
+    cnxv2l_v7    (convnextv2) 2/4, mean delta +0.00008  = +0.40 sd -> clean TIE.
+    cnxl384n     (384-native) 0/2 folds, both ~-0.0007  -> TIE.
+(The sd of a 4-fold mean difference is ~0.00020, since each fold's baseline is
+itself a single unreplicated run.)
+
+### HOW TO RUN AN OFFLINE COMPARISON FROM NOW ON
+- Weak-val sd of this recipe is **0.00028** per fold. Required seeds PER ARM
+  (80% power): a true +0.0005 needs ~6 seeds; +0.0010 needs ~2; +0.0020 needs 1.
+  A single run per arm can resolve NOTHING below ~0.0008.
+- Report mean +/- sd over seeds, never a bare single number.
+- **gold-58 is far worse and should be retired for model selection.** The trainer
+  itself prints "sigma~0.0125" next to it — that is 45x the weak-val sd. Every
+  gold-58 delta ever used in this file to justify a decision (they are all in the
+  +/-0.003 range) is deep inside noise. This fully explains the long-standing
+  "offline yardsticks decoupled from the LB" mystery in the 08-15/08-25 entries:
+  they were not decoupled, they were never resolving anything.
+
+### A CLAIM THAT NOW NEEDS RE-EXAMINING (flagged, not resolved)
+The strategy in this file rests on "COMPONENT CAPACITY moves the hidden test;
+ensemble tweaks don't", concluded from **v14 0.947 vs v10 0.946 — a single
+0.001 LB step**. The hidden test is fixed, so re-submitting the SAME weights is
+deterministic; but two DIFFERENTLY-SEEDED trainings of the same config are two
+different models, and their LB scores will differ by something in the same family
+as the 0.00028 weak-val sd (smaller after 4-fold ensembling, but not zero).
+A 0.001 step on a 3-decimal board is plausibly ~1 sd. I could NOT test this
+without burning submissions and did not. Treat "capacity is the lever" as an
+UNVALIDATED hypothesis resting on one 1-sigma-ish observation, not as settled.
+Cheapest honest test: submit two independently-seeded builds of the SAME config
+and see how far apart they land. That measures the LB's own model-seed noise and
+would calibrate every past probe. It costs 2 submissions and is worth more than
+another architecture probe.
+
+### WHERE THIS LEAVES THE PROJECT
+Parameters (large=xlarge), pixels (448 upscale AND true decode), pretraining
+resolution, and 3 of 4 pretraining objectives are now ALL ties within noise.
+The component is not the binding constraint. Do not spend more GPU-hours
+screening backbones — that lane is measured out. Remaining untested levers are
+the targets/labels and the external-data (MRNet) lane.
+NO SUBMISSION WAS SPENT on any of this. LB config unchanged: v14 = kernel
+VERSION 20 + weights v11+ = 0.947.
+
+Artifacts on /scratch: runs/baseline_replicate{,2,3,4,5}_f0 (the noise floor),
+runs/cnxl448t_v7_f{0-3}, runs/screen_cnxv2l_f0 + runs/cnxv2l_v7_f{1,2,3},
+runs/screen_cnxl384n_f0 + runs/cnxl384n_v7_f1, data/processed/npz448.

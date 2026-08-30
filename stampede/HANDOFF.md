@@ -480,3 +480,40 @@ user's token (~/.kaggle/access_token pattern). The submission kernel
   step/EMA/clip happen on accumulation boundaries). Needed because convnextv2
   and maxvit OOM at bs4/K24/384 on a 95GB H100; accumulation keeps the effective
   batch at 4 so the screen stays single-variable.
+- **BACKBONE SCREEN RESULTS (fold-0 gate vs cnxl384_v7 f0 = 0.9631):**
+    cnxldino  convnext_large.dinov3_lvd1689m  -> **COLLAPSED**: ep0 weak-val
+      0.5085 (chance); train loss flatlined at 0.571 (base rate) while a healthy
+      run fell 0.622->0.549. DINOv3 self-supervised features do not adapt under
+      our recipe (lr 9e-5, OneCycle, 6ep). Killed at ep0; not worth an LR hunt.
+      runs/screen_cnxldino_f0_COLLAPSED.
+    mvitl     maxvit_large_tf_384.in21k_ft_in1k -> **FAR BEHIND**: ep0 0.8918
+      (-0.0348), ep1 0.9390 (-0.0157). Killed at ep1 (also the slowest lane at
+      ~8.5h and BatchNorm-confounded by its bs2 run). runs/screen_mvitl_f0_ABANDONED_ep1.
+    cnxl384n  convnext_large.fb_in22k_ft_in1k_384 -> **FAILS, 0/2 folds**:
+      f0 0.9625 vs 0.9631 (-0.0006), f1 0.9629 vs 0.9638 (-0.0009).
+      NOTABLE NEGATIVE: our LB-0.947 backbone is the *224-trained* checkpoint fed
+      384px images; swapping to the 384-native finetune of the IDENTICAL
+      architecture at IDENTICAL inference cost (textbook FixRes) is flat-to-worse.
+      6 epochs of full-backbone finetuning apparently washes out the pretrained
+      resolution. (f0 landed on 0.9625 — the exact value cnxl448t f0 gave.)
+      runs/screen_cnxl384n_f0, runs/cnxl384n_v7_f1.
+    cnxv2l    convnextv2_large.fcmae_ft_in22k_in1k_384 -> ONLY SURVIVOR, all 4
+      folds now running (runs/screen_cnxv2l_f0 = fold 0, runs/cnxv2l_v7_f{1,2,3}).
+      ep0 +0.0031, ep1 +0.0005 vs baseline — positive but NARROWING. bs2+accum2
+      (effective batch 4); convnextv2 is LayerNorm/GRN only so this is NOT
+      batch-confounded. Same 197.8M params => kernel runtime unchanged
+      (K16@384, 45s stub) if it wins. Gate: >=3/4 folds at-or-above
+      0.9631/0.9638/0.9595/0.9634. ETA f0 ~02:00, f1-f3 ~05:30 UTC-5 08-30.
+- RUNNING TALLY OF FLAT AXES (all within +/-0.002 of baseline): parameters
+  (large=xlarge), pixels (448-upscale negative, true-448 flat), pretraining
+  resolution (384-native flat), 3 of 4 pretrainings. If cnxv2l also lands flat,
+  the honest read is that the COMPONENT is not the binding constraint and the
+  remaining levers are labels/targets or the external-data (MRNet) lane, not
+  more backbone screening.
+- OPERATIONAL GOTCHAS burned time this session: (1) `pkill -f` / `pgrep -f`
+  MATCH THE INVOKING SHELL'S OWN COMMAND LINE — a pkill killed my own shell
+  mid-command, and a GPU queue-watcher deadlocked because its `until ! pgrep -f
+  "<pattern>"` never emptied (the shell that heredoc'd the script still carried
+  the pattern in its cmdline). Use PIDs from /proc, or poll nvidia-smi memory.
+  (2) `ps` truncates to ~80 cols with no TTY, so long training command lines are
+  NOT greppable via ps — read /proc/<pid>/cmdline instead.

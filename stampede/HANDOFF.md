@@ -631,8 +631,23 @@ switched in the kernel script, not by re-uploading weights. Both arms run W_MIL=
 so they sit directly against v14 (cnxl alone) = 0.947, undiluted by the MIL head.
 
     v14  SERIES_PATTERNS=["cnxl_f*.pt"]                 = 0.947   (already on board)
-    v16  SERIES_PATTERNS=["cnxlB_f*.pt"]                = ?       (kernel version 22)
-    v17  SERIES_PATTERNS=["cnxl_f*.pt","cnxlB_f*.pt"]   = ?       (8-model seed ensemble)
+    v16  SERIES_PATTERNS=["cnxlB_f*.pt"]                = ?  SUBMITTED 22:28, kernel v22
+    v17  SERIES_PATTERNS=["cnxl_f*.pt","cnxlB_f*.pt"]   = ?  SUBMITTED 22:35, kernel v23
+
+BOTH STUBS VERIFIED BEFORE SUBMITTING (this is the step never to skip):
+    v16: 4 cnxlB models, K=16 size=384, 0 MIL, 3 rows, 0 series failures, 43.3s/3 studies
+    v17: 8 models (both seeds), K=16 size=384, 0 MIL, 3 rows, 0 failures, 72.9s/3 studies
+The size=384 confirms the npz_root-substring decode path fired correctly (these
+checkpoints have img_size=0, so they ride entirely on that substring — the 320px
+silent-fallthrough trap did NOT bite).
+
+RUNTIME NOTE for v17: naive 3-study extrapolation says ~8.8h vs the 9h cap, which
+looks alarming, but a 3-study stub badly over-reads per-study cost (CUDA warm-up is
+a large fraction of it) — the same arithmetic predicts 12.3h for v10, which actually
+COMPLETED. The real anchor is that v10 was 8x384 @ K24 + TTA and finished; v17 is
+the same 8 models at K16, ~33% less inference work, so it is strictly inside a
+proven-fitting config. If v17 nonetheless times out, that retires the "8x384 max"
+rule and the fix is INFER_K_CAP=12 or dropping to 6 models.
 
 v16 answers the question flagged as unresolved in the 08-30 noise-floor entry: how
 big is the LB's OWN model-seed noise? Every past 0.001-0.002 LB step — including

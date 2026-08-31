@@ -795,13 +795,20 @@ This is the SECOND targets iteration to transfer to LB while reading FLAT offlin
 Targets now have a better track record than any architecture change we have made.
 
 ### v10 targets: BUILT, THEN REJECTED WITHOUT TRAINING — the iteration has converged
-Built `labels_train_v10_pl.parquet` = 0.4*v5 + 0.6*(cnxl384_v9 OOF). It is a no-op:
-    corr(v10, v9) = 0.9966     mean|v10 - v9| = 0.0125
-    (for scale: mean|v9 - v5| = 0.0937 — the step that actually bought +0.001)
+Built `labels_train_v10_pl.parquet` = 0.4*v5 + 0.6*(cnxl384_v9 OOF), then rejected it.
 Reason: the STUDENT becomes the next TEACHER, and cnxl384_v9's OOF (0.9134) is no
-better than cnxl384_v7's (0.9137). Another round of the same teacher quality cannot
+better than cnxl384_v7's (0.9137). Another round at the same teacher quality cannot
 move the targets. **A better student needs a better TEACHER, not another iteration.**
-Do not train v10; the parquet is left in place only as evidence.
+
+DO NOT use target-delta or correlation to judge an iteration — I nearly did, and it
+is WRONG. The magnitudes:
+    v7 -> v9   mean|d| 0.0139  corr 0.9943   <- THE STEP THAT GAVE +0.001 LB
+    v9 -> v10  mean|d| 0.0125  corr 0.9966
+    v9 -> v11  mean|d| 0.0068  corr 0.9989
+    (scale: v5 -> v9 mean|d| 0.0937, corr 0.9165)
+The winning step was itself a small, highly-correlated change — barely different from
+v10's. So "corr 0.9966, it has converged" does NOT discriminate a productive iteration
+from a dead one. **Judge an iteration by its TEACHER's yardstick AUC, nothing else.**
 
 ### TEACHER SEARCH — measured on the v5-aligned yardstick (binarized at 0.5)
     single teachers        ensembles (probability-space mean)

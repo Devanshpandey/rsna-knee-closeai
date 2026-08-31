@@ -718,3 +718,62 @@ HOW TO READ THE RESULT: per the 08-30 noise floor, a single-seed 4-fold offline 
 below ~0.0008 resolves NOTHING. Treat this eval as a regression sanity check, not a
 gate. The v6->v7 precedent was flat offline and +0.002 on LB, so unless v9 shows a
 real drop the informative next step is an LB probe, not an offline verdict.
+
+## 2026-08-31 — RESULTS: v16 = 0.947 (SEED NOISE BOUNDED), v17 TIMED OUT (my error)
+
+### v16 = 0.947. Seed noise on the LB is < 0.001.
+seedB alone scored **0.947 — identical to v14 (seed A)**. Two independently-seeded
+4-fold builds of the same config land on the same board value, so LB model-seed noise
+for a 4-fold ensemble is bounded under ~0.001 (both could round from 0.9465/0.9474,
+so this bounds the sd, it does not measure it).
+
+TWO CONSEQUENCES, both correcting the 08-30 entry:
+1. The flagged worry that "v14 0.947 vs v10 0.946 is plausibly ~1 sd of seed noise"
+   is NOT supported. Seed noise is smaller than that step. **"Component capacity
+   moves LB" survives this test** and can go back to being a working hypothesis.
+2. seedB's offline deficit (-0.00082 weak-val, 4/4 folds lower, and gold mean
+   0.9238 vs 0.9250) produced ZERO LB difference. So offline weak-val does not
+   merely fail to resolve small deltas — it reports differences that the LB does
+   not see at all. Combined with TTA (offline-worthless, LB-load-bearing), the
+   rule is: **offline screens cannot retire a candidate. Only the LB can.**
+   This reopens the 08-30 "backbone lane is measured out" conclusion, which was
+   built entirely on offline ties. cnxv2l (convnextv2-large) has 4 COMPLETE folds
+   on disk (0.96233/0.96370/0.96045/0.96363, mean 0.96253 — actually a hair above
+   v7's 0.96243) and has never been LB-probed. Same for cnxl448t (true 448, mean
+   0.96202). Both cost zero GPU to probe.
+
+### v17 TIMED OUT — burned submission. MY REASONING ERROR, recorded so it is not repeated.
+COMPLETE with a BLANK publicScore (identical signature to the 08-12 12-model burn).
+I pre-flagged the runtime risk, computed ~8.8h from the stub, then talked myself out
+of it with a bad argument: "v10 was 8x384 @K24 + TTA and completed, so 8x384 @K16 is
+strictly cheaper." **v10's eight models were convnext_BASE + effnetv2_m (~88M/~54M).
+v17's eight were all convnext_LARGE (~198M) — about 2x v10's compute, not less.**
+I compared model COUNT and ignored model SIZE. The "max 8x384 models" rule in this
+file is size-blind and must not be used again.
+
+CORRECTED RULE — budget by the stub, not by count:
+    predicted_rerun_hours = stub_inference_seconds / 3 * 1300 / 3600
+    v14  4x large  43.3s/3 -> 5.2h  COMPLETED
+    v17  8x large  72.9s/3 -> 8.8h  FAILED
+Keep the estimate under ~7h for margin. The linear stub extrapolation is a GOOD
+predictor; do not discount it for "CUDA warm-up".
+
+CONSEQUENCE: the seed-ensemble question is still OPEN. A 2-seed cnxl ensemble must
+fit the budget some cheaper way — 6 models (~6.6h est), or 8 models at K12.
+
+### v18 = v9 targets probe (kernel version 24), 4x cnxl9 — 4 large models, same cost
+class as v14 (safe). Weights dataset now also carries cnxl9_f0-3. Glob isolation
+verified: "cnxl_f*.pt" does NOT match "cnxl9_f0.pt", so the v9 upload could not have
+contaminated the pending v17 run.
+v9 offline (both families re-scored on the v5-aligned yardstick, K16+TTA, same run):
+    pooled OOF   v9 0.9134  vs  v7 0.9137   (-0.0003 = TIE)
+    gold-58      v9 0.9283  vs  v7 0.9278   (+0.0005 = TIE)
+    per-fold     -0.0010 / -0.0002 / +0.0002 / -0.0008
+    per-label flat except MCL (v9 0.913 vs v7 0.907)
+NOTE the stored preds/cnxl384_v7/eval.log 0.9141 is NOT comparable — it was K24;
+re-running v7 at K16 gives 0.9137. Always re-evaluate both arms in one pass.
+
+### MRNet lane is BLOCKED on two human steps (flagged, not resolved)
+(1) the external-data rules check this file flagged on 08-25 was never answered;
+(2) MRNet needs Stanford AIMI registration + licence to get a download link.
+Neither is doable from the TACC session. Nothing was invested in it.

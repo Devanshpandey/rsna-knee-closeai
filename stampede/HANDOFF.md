@@ -689,3 +689,32 @@ change vs v7/seedB (kernel's "384"-in-npz_root substring gives the right decode)
 dir must carry every file you want to keep. weights_upload_v13 was built by
 hardlinking weights_upload_v12 (`cp -l`, no extra space on /scratch) and adding the
 4 cnxlB files.
+
+### cnxl384_v9 COMPLETE (4 folds, ~3h on 4xH100)
+    fold   best weak-val(v9 targets)   gold-58 final
+    0          0.96209                    0.9242
+    1          0.96143                    0.9240
+    2          0.95791                    0.9264
+    3          0.96240                    0.9268
+    gold mean  0.9254   vs v7 0.9250   vs seedB 0.9238
+
+DO NOT compare that weak-val column to v7's 0.9624/0.9638/0.9595/0.9634. Weak-val is
+scored against each run's OWN training targets, and v9's targets differ from v7's —
+this is the "never compare weak-val across label versions" gotcha. It shows up
+immediately: v9's ep0 weak-val (0.9113-0.9164) reads ~0.008 BELOW v7's (0.9189-0.9229)
+purely as a label-version artifact, while its gold-58 over the same epochs sat inside
+the v7/seedB band the whole way. gold-58 is the only cross-version-comparable metric
+here, and at sigma~0.0125 it cannot select — v9 0.9254 / v7 0.9250 / seedB 0.9238 is a
+three-way tie.
+
+The valid comparison is OOF re-scored against the FIXED yardstick
+(labels_train_30b_v5_aligned.parquet). Running BOTH families through it now
+(`run_v9_eval.sh`, or the parallel 2-GPU form) rather than reusing the stored
+preds/cnxl384_v7/eval.log, because that log does not record which --labels produced
+its 0.9141 — assuming would risk exactly the cross-version error above.
+Outputs: preds/cnxl384_v9_yard/, preds/cnxl384_v7_yard/, logs/eval_*_yard.log.
+
+HOW TO READ THE RESULT: per the 08-30 noise floor, a single-seed 4-fold offline delta
+below ~0.0008 resolves NOTHING. Treat this eval as a regression sanity check, not a
+gate. The v6->v7 precedent was flat offline and +0.002 on LB, so unless v9 shows a
+real drop the informative next step is an LB probe, not an offline verdict.

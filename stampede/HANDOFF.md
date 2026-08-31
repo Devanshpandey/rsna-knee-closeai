@@ -777,3 +777,51 @@ re-running v7 at K16 gives 0.9137. Always re-evaluate both arms in one pass.
 (1) the external-data rules check this file flagged on 08-25 was never answered;
 (2) MRNet needs Stanford AIMI registration + licence to get a download link.
 Neither is doable from the TACC session. Nothing was invested in it.
+
+## 2026-08-31 — **v18 = 0.948. TARGETS ARE A LEVER. RANK 4.**
+BEST KNOWN CONFIG IS NOW **v18 = kernel VERSION 24 + weights `cnxl9_f*.pt`** (cnxl384
+on v9 targets, W_MIL=0, TTA, K16). Keep for finals. LB: Brandon Low 0.952, Vitali /
+Mazzutti 0.950, then us at 0.948 with Molvaer / MKhlystun / Willis.
+
+    config   targets   LB       note
+    v14      v7        0.947    seed A
+    v16      v7        0.947    seed B — same config, different seed
+    v18      v9        0.948    <- +0.001, and v7 was confirmed TWICE at 0.947
+
+That double confirmation is what makes this readable: the v7-targets floor is not a
+single draw, so +0.001 is a step above a replicated baseline rather than a wobble.
+This is the SECOND targets iteration to transfer to LB while reading FLAT offline
+(v6->v7 was +0.002; v9 was OOF -0.0003 / gold +0.0005 = a tie on both yardsticks).
+Targets now have a better track record than any architecture change we have made.
+
+### v10 targets: BUILT, THEN REJECTED WITHOUT TRAINING — the iteration has converged
+Built `labels_train_v10_pl.parquet` = 0.4*v5 + 0.6*(cnxl384_v9 OOF). It is a no-op:
+    corr(v10, v9) = 0.9966     mean|v10 - v9| = 0.0125
+    (for scale: mean|v9 - v5| = 0.0937 — the step that actually bought +0.001)
+Reason: the STUDENT becomes the next TEACHER, and cnxl384_v9's OOF (0.9134) is no
+better than cnxl384_v7's (0.9137). Another round of the same teacher quality cannot
+move the targets. **A better student needs a better TEACHER, not another iteration.**
+Do not train v10; the parquet is left in place only as evidence.
+
+### TEACHER SEARCH — measured on the v5-aligned yardstick (binarized at 0.5)
+    single teachers        ensembles (probability-space mean)
+    cnxxl384_v7   0.9150   cnxl_v7 + cnxxl        0.9154  <- BEST
+    cnxl384_v7    0.9137   cnxl_v7 + v9 + cnxxl   0.9153
+    cnxl384_v9    0.9134   3L + mil384e10         0.9152
+    cnxb384_v7    0.9126   3L + mil_e10 + effs    0.9133
+    v2m384_v7     0.9109   ALL8                   0.9122
+    mil384e10_v7  0.9026
+    mil_effs384   0.8882
+Adding the MIL families HURTS the teacher despite their diversity. The best teacher
+is just the two large convnext-class models: **cnxl384_v7 + cnxxl384_v7 = 0.9154**,
+which is +0.0017 over the 0.9137 teacher that produced v9 -> 0.948.
+USE PROBABILITY-SPACE MEAN, NOT RANK-AVERAGE: rank values are uniform[0,1] and the
+make_labels blend adds to v5 in probability space, so rank-blending would distort
+the targets. (Rank-avg happens to give the same ORDERING — 0.9154 for the same pair —
+but the wrong VALUES.) The chosen teacher's blend range is 0.048-0.979, mean 0.297.
+NEXT TARGETS GENERATION (v11) = 0.4*v5 + 0.6*(mean-prob of cnxl384_v7 + cnxxl384_v7).
+
+### Note on cnxxl
+cnxxl384_v7 is the single best teacher (0.9150 > cnxl's 0.9137) even though the
+08-25 entry recorded xlarge as "ties large, 1.7x cost" and shelved it. That verdict
+was offline weak-val — the metric v16 just showed cannot retire a candidate.

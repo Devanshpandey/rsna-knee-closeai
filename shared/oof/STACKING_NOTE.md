@@ -55,3 +55,12 @@ devansh26/rsna-knee-weights-r2 (latest version: r4_v2/r4_v3/r5_cnxts × 4 folds
 DICOM->320px/140mm decode path identical to predict.py's load_series_volume).
 Since v11 showed OOF->LB mapping saturating: judge this probe on LB directly;
 gold + diversity are the offline evidence.
+
+## Addendum 3 (2026-08-31) — upgraded MIL@384 pair on v7 targets
+mil_effs384_v7 gold 0.9066 (best single family, devansh side), mil_srx384_v7 0.9024;
+pair 0.9085. Stack vs v10-era L pair: +0.0022 at 1/2 MIL weight (0.9276).
+Correlation vs L rose to 0.92 (shared v7 targets) — stronger but less orthogonal;
+net stack gain unchanged. Recommendation: fold into the gold-conservative FINAL pick
+and the learned aggregator; not proposed as a solo LB probe given 3x MIL-neutral reads.
+fastMRI noisy-student lane in progress (10k external knees, pseudo-label pretrain) —
+that's the lane aimed at breaking the 0.947 plateau, ETA first results ~2 days.

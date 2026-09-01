@@ -879,3 +879,59 @@ Weights dataset naming now: cnxl_f*=v14 seedA, cnxlB_f*=seedB, cnxl9_f*=v9 (LB
 0.948, BEST), cnxv2_f*=convnextv2 on v7, cnxv11_f*=v11. All five globs verified
 mutually non-matching, so any subset can be selected by SERIES_PATTERNS from one
 dataset version with no re-upload and no version race.
+
+## 2026-09-01 — **cnxv2 = 0.949. THE BACKBONE LANE WAS NEVER MEASURED OUT.**
+NEW BEST CONFIG: **kernel VERSION 25 + weights `cnxv2_f*.pt`** = convnextv2_large
+FCMAE on **v7** targets, W_MIL=0, TTA, K16. Sole holder of 0.949; rank 4
+(Brandon Low 0.952, Vitali 0.950, Mazzutti 0.950). Keep for finals.
+
+THE COMPARISON IS CLEAN AND THE BASELINE IS REPLICATED:
+    backbone            targets   LB
+    convnext_large      v7        0.947   (v14 seed A)
+    convnext_large      v7        0.947   (v16 seed B — same config, different seed)
+    convnextv2_large    v7        0.949   <- +0.002, ONLY the backbone changed
++0.002 is DOUBLE the seed-noise bound established by v16, and it is measured against
+a baseline confirmed twice. This is the largest single-change gain in the project
+since v6->v9 and it came from a candidate the 08-30 session had RETIRED.
+
+**OFFLINE CALLED THIS EXACT COMPARISON A TIE, THREE TIMES:**
+    08-30 screen      cnxv2l vs cnxl, 2/4 folds, mean +0.00008 -> "clean TIE"
+    cnxv2l_v7 4-fold  mean weak-val 0.96253 vs cnxl384_v7 0.96243  (+0.0001)
+    cnxv2l_v9 4-fold  mean weak-val 0.96109 vs cnxl384_v9 0.96096  (+0.00013)
+The offline yardstick did not merely fail to resolve this — it resolved it as ZERO
+while the truth was +0.002, the biggest effect on the board. Combined with v16
+(offline -0.0008 -> LB 0.000) and TTA (offline 0 -> LB +0.001), the rule is final:
+**NEVER retire a candidate on offline evidence. Offline is for catching disasters
+only. Every shelved-on-a-tie family in this file is an open question.**
+Still unprobed and shelved on offline ties: cnxl448t (true 448, 4 folds on disk),
+cnxl384n (384-native, only 2 folds), cnxxl384_v7 (xlarge — and note it is also the
+best single TEACHER at 0.9150, so it is doubly suspicious as a retired candidate).
+
+### IMMEDIATE CONSEQUENCE — the two winning axes may COMPOSE
+backbone (+0.002, convnextv2) and targets (+0.001, v9) are independent changes.
+`cnxv2l_v9` = convnextv2 x v9 targets was ALREADY TRAINED this session and has the
+best OOF of any family (0.9143 / gold 0.9293). Uploaded as `cnxv29_f*.pt` and being
+probed now. If the effects compose it lands ~0.950.
+Runtime is now confirmed safe for this cost class: the cnxv2 probe ran at 60.8s/3
+stub (7.3h est) and PASSED, which also tightens the timeout boundary to
+(60.8s, 72.9s] i.e. (7.3h, 8.8h].
+
+### Yardstick table (all K16+TTA on labels_train_30b_v5_aligned)
+    family         pooled OOF   gold-58    LB
+    cnxl384_v7     0.9137       0.9278     0.947 x2
+    cnxl384_v9     0.9134       0.9283     0.948
+    cnxl384_v11    0.9142       0.9300     probing (kernel v26)
+    cnxv2l_v9      0.9143       0.9293     probing now
+    cnxv2l_v7      (not evaluated on yardstick)  0.949  <- BEST, and NOT the best OOF
+Note cnxv2l_v7 is the LB leader while cnxl384_v11 leads the OOF table. The OOF
+ordering does not match the LB ordering. Do not rank candidates by OOF.
+
+### Process
+- v13 lane (cnxl384 on the 0.9159 teacher) is running but is now on the WRONG
+  backbone — convnextv2 beats convnext_large by +0.002. A cnxv2l lane needs ~9h
+  (bs2+accum2) which did not fit the remaining walltime; left v13 running for the
+  targets datapoint. NEXT SESSION: train convnextv2 on the best targets.
+- Deferred `until <cond>; do sleep; done; <launch>` background jobs FAILED TO FIRE
+  twice (v11 chain, fold-1 relaunch), leaving GPUs idle. Launch directly instead.
+- v13 fold 1 OOM'd because an eval_ensemble still held 46 GB on that GPU. Check
+  `nvidia-smi` is actually clear before launching training.

@@ -970,3 +970,52 @@ and is the single best OOF (0.9150). That is the right way to spend xlarge.
 Corollary: ALL remaining LB gain must come from making one 4-fold convnextv2 family
 better — targets, recipe, schedule — not from adding components.
 (cnxxl384_v7 does have all 4 folds on disk: 0.96311/0.96293/0.96005/0.96362.)
+
+## SESSION END-STATE 2026-09-01 (node c562-010 expires ~20:22 CDT) — READ FIRST
+**LB 0.949, rank 4** (Brandon Low 0.952, Vitali 0.950, Mazzutti 0.950). Started the
+session at 0.947 / rank 9.
+**BEST CONFIG = kernel VERSION 25 + weights `cnxv2_f*.pt`** (convnextv2_large FCMAE,
+v7 targets, W_MIL=0, TTA, K16). Keep for finals.
+
+### FIRST ACTION NEXT SESSION (fresh 48h node)
+Launch **convnextv2_large on the best targets, 4 folds** — the one experiment that
+did not fit this allocation (~9h/fold in parallel; only 4.5h remained). Which targets
+depends on two probes that were still PENDING at node expiry — CHECK THEM FIRST:
+    kernel v26 `cnxv11_f*`  = v11 targets on convnext_large   (submitted 10:18 UTC)
+    kernel v27 `cnxv29_f*`  = convnextv2 x v9 targets         (submitted 12:35 UTC)
+  - If v27 >= 0.950: the axes COMPOSE. Train convnextv2 on the best targets.
+  - If v27 == 0.949: they do NOT compose; backbone carries it, targets are done.
+    Stop target work entirely and look elsewhere (recipe/schedule for convnextv2).
+  - If v27 < 0.949: v9 targets HURT convnextv2. Keep cnxv2_f* (v7) and stop.
+`labels_train_v15_pl.parquet` is BUILT AND READY (teacher 0.9161) if targets live.
+
+### THE TARGETS AXIS HAS SATURATED (offline)
+    targets  teacher   student pooled OOF   LB
+    v7       —         0.9137               0.947 x2
+    v9       0.9137    0.9134               0.948
+    v11      0.9154    0.9142               pending
+    v13      0.9159    0.9142               not submitted
+    v15      0.9161    (not trained)
+Teacher gains are asymptoting (+0.0017, +0.0005, +0.0002) and the student stopped
+responding at 0.9142. Judge iterations by TEACHER yardstick AUC (see the v10 entry);
+by that measure there is almost nothing left here. But note the axis has twice gained
+on LB while flat offline, so let v26's result — not this table — close it.
+
+### FULL YARDSTICK TABLE (K16+TTA on labels_train_30b_v5_aligned)
+    family        pooled OOF   gold-58   LB
+    cnxv2l_v7     0.9146       0.9306*   0.949   <- BEST on both
+    cnxv2l_v9     0.9143       0.9293    probing (v27)
+    cnxl384_v11   0.9142       0.9300    probing (v26)
+    cnxl384_v13   0.9142       0.9306    not submitted
+    cnxl384_v7    0.9137       0.9278    0.947 x2
+    cnxl384_v9    0.9134       0.9283    0.948
+    cnxxl384_v7   0.9150       —         RUNTIME-LOCKED (best teacher though)
+    (*cnxv2l_v7 gold was still being written at expiry; verify from
+      logs/eval_cnxv2l_v7_yard.log)
+
+### WEIGHTS DATASET — five families, all globs verified mutually non-matching
+    cnxl_f*=v14 seedA(0.947)  cnxlB_f*=seedB(0.947)  cnxl9_f*=v9(0.948)
+    cnxv2_f*=convnextv2 v7 (0.949, BEST)  cnxv11_f*=v11  cnxv29_f*=cnxv2 x v9
+Any subset is selectable via SERIES_PATTERNS from ONE dataset version — no re-upload,
+no version race. Untrained-but-on-disk: runs/cnxl384_v13_f{0-3}, runs/cnxxl384_v7_f*,
+runs/cnxl448t_v7_f*.

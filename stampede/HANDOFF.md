@@ -1023,3 +1023,38 @@ Rank by yardstick OOF; treat gold as a smoke test for catastrophic breakage only
 Any subset is selectable via SERIES_PATTERNS from ONE dataset version — no re-upload,
 no version race. Untrained-but-on-disk: runs/cnxl384_v13_f{0-3}, runs/cnxxl384_v7_f*,
 runs/cnxl448t_v7_f*.
+
+## v11 TARGETS = 0.948 — THE TARGETS AXIS IS CLOSED (and my teacher rule is falsified)
+    targets (all on convnext_large)   teacher   student OOF   LB
+    v7                                —         0.9137        0.947 x2
+    v9                                0.9137    0.9134        0.948
+    v11                               0.9154    0.9142        0.948   <- NO GAIN
+Total yield of the whole targets programme: **+0.001, once** (v7->v9). v9->v11 gave
+nothing despite a +0.0017 better teacher and a +0.0008 better student OOF.
+
+**CORRECTION to my own rule from earlier today.** I wrote "judge a pseudo-label
+iteration by its TEACHER's yardstick AUC, nothing else." That rule predicts the
+STUDENT OOF correctly (teacher 0.9137->0.9154 gave student OOF 0.9134->0.9142) but
+the chain BREAKS at OOF->LB: the better-teacher, better-OOF model scored identically
+on the board. So teacher AUC is a valid predictor of an offline number that does not
+itself predict the LB — which makes it useless for the decision that matters.
+Do not build another targets generation on it. `labels_train_v13/v15_pl.parquet` are
+built but should NOT be trained unless something new justifies reopening the axis.
+
+### WHAT ACTUALLY MOVED THE BOARD, WHOLE PROJECT
+    +0.002  backbone convnext_large -> convnextv2_large (v19, 2026-09-01)
+    +0.001  targets v7 -> v9                            (v18, 2026-08-31)
+    +0.001  mirror TTA                                  (v10 vs v13, 08-25)
+Everything else — xlarge, 448 (upscale and true), 384-native, MIL blends, ensemble
+tweaks, aggregation, per-label blend weights, seed ensembling, v11/v13 targets — is
+flat or unmeasurable. Note ALL THREE winners were invisible or negative offline.
+
+### REVISED DECISION TREE FOR THE PENDING v27 PROBE (cnxv2 x v9 targets)
+  - v27 >= 0.950 : axes compose. That build becomes best; then look at recipe.
+  - v27 == 0.949 : no composition. cnxv2_f* (v7 targets) stays best. Targets fully
+                   dead — do not spend another GPU-hour or submission on them.
+  - v27 <= 0.948 : v9 targets HURT convnextv2. Keep cnxv2_f*, and note the targets
+                   gain was convnext_large-specific.
+In two of three branches the next lever is NOT targets and NOT another backbone
+(runtime-locked) — it is the training recipe for the single convnextv2 family we can
+afford: schedule length, lr, K, augmentation. That is the untouched axis.

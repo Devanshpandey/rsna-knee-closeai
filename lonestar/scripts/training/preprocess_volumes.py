@@ -79,14 +79,15 @@ def normalize_resize(vol: np.ndarray, size: int, spacing=None, fov_mm: float = 0
 
 
 def process_one(task):
-    study_uid, series_uid, dicom_root, out_dir, size, fov_mm = task
+    study_uid, series_uid, dicom_root, out_dir, size, fov_mm, series_path = task
     out_path = Path(out_dir) / study_uid / f"{series_uid}.npy"
     try:
         if out_path.exists():
             v = np.load(out_path, mmap_mode="r")
             return dict(StudyInstanceUID=study_uid, SeriesInstanceUID=series_uid,
                         n_slices=v.shape[0], h=v.shape[1], w=v.shape[2], status="cached")
-        vol, spacing = load_series(Path(dicom_root) / study_uid / series_uid)
+        src = Path(series_path) if series_path else Path(dicom_root) / study_uid / series_uid
+        vol, spacing = load_series(src)
         n_raw_h, n_raw_w = vol.shape[1], vol.shape[2]
         vol = normalize_resize(vol, size, spacing=spacing, fov_mm=fov_mm)
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -113,7 +114,9 @@ def main() -> None:
     series = pd.read_csv(args.series_csv)
     if args.limit:
         series = series.head(args.limit)
-    tasks = [(r.StudyInstanceUID, r.SeriesInstanceUID, args.dicom_root, args.out_dir, args.size, args.fov_mm)
+    has_path = "series_path" in series.columns
+    tasks = [(r.StudyInstanceUID, r.SeriesInstanceUID, args.dicom_root, args.out_dir, args.size, args.fov_mm,
+              getattr(r, "series_path", None) if has_path else None)
              for r in series.itertuples()]
     print(f"{len(tasks)} series -> {args.out_dir}", flush=True)
 

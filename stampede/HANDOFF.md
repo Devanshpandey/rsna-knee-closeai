@@ -923,8 +923,23 @@ stub (7.3h est) and PASSED, which also tightens the timeout boundary to
     cnxl384_v11    0.9142       0.9300     probing (kernel v26)
     cnxv2l_v9      0.9143       0.9293     probing now
     cnxv2l_v7      (not evaluated on yardstick)  0.949  <- BEST, and NOT the best OOF
-Note cnxv2l_v7 is the LB leader while cnxl384_v11 leads the OOF table. The OOF
-ordering does not match the LB ordering. Do not rank candidates by OOF.
+CORRECTION (later the same day): I wrote here that "the OOF ordering does not match
+the LB ordering, do not rank by OOF" — that was based on a table that was MISSING
+cnxv2l_v7, our LB best, which had never been yardstick-evaluated. Once scored it came
+in at **0.9146, the best OOF of any family**, matching its LB rank. The accurate
+statement:
+    family        OOF      LB
+    cnxv2l_v7     0.9146   0.949   <- top of both
+    cnxl384_v7    0.9137   0.947 x2
+    cnxl384_v9    0.9134   0.948   <- INVERTED vs cnxl384_v7
+OOF gets the LARGE effect right (convnextv2 > convnext_large, +0.0009 OOF / +0.002 LB)
+and gets the SMALL one wrong (v9 reads -0.0003 below v7 offline but is +0.001 above it
+on LB). So: OOF is informative at ~0.001-scale OOF differences and useless below that.
+That is consistent with everything else here — it does NOT contradict "offline cannot
+retire a candidate", because the convnextv2 tie that misled the 08-30 screen was in
+WEAK-VAL (+0.0001), not in yardstick OOF, where the gap was a visible +0.0009.
+**LESSON: always yardstick-evaluate a family before judging it, and never judge on
+weak-val. cnxv2l_v7 sat unevaluated for two days while we ranked everything else.**
 
 ### Process
 - v13 lane (cnxl384 on the 0.9159 teacher) is running but is now on the WRONG

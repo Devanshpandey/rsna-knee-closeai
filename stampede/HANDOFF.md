@@ -935,3 +935,23 @@ ordering does not match the LB ordering. Do not rank candidates by OOF.
   twice (v11 chain, fold-1 relaunch), leaving GPUs idle. Launch directly instead.
 - v13 fold 1 OOM'd because an eval_ensemble still held 46 GB on that GPU. Check
   `nvidia-smi` is actually clear before launching training.
+
+### RUNTIME MODEL — and the strategic corner it puts us in
+Decomposed from four measured stubs (seconds of inference per 3 studies):
+    4x cnxl   @K16 = 44.9      8x cnxl @K16 = 72.9      4x cnxv2 @K16 = 62.7
+    => fixed preprocessing P = 16.9 s/3-studies
+       per-model  convnext_large   m_L = 7.0     convnextv2_large m_V = 11.5 (1.4x)
+    predicted_rerun_hours = stub_sec / 3 * 1300 / 3600
+    anchors: 60.8s -> 7.3h PASSED ; 72.9s -> 8.8h FAILED. Budget < ~7.5h.
+
+WHAT THIS RULES OUT AT THE convnextv2 COST CLASS (all TIMEOUT):
+    cnxl448t 4-fold  85s  10.3h      cnxxl 4-fold    107s  12.8h
+    4 cnxv2+4 cnxl9  91s  10.9h      8 models @K12    94s  11.3h
+**We can afford exactly ONE 4-fold convnextv2 family and nothing else.** Ensembling,
+xlarge, and true-448 are locked out by the 9 h budget, not by their quality. So the
+"is it better?" question for those families is now moot for submission purposes —
+though cnxxl384_v7 remains valuable as a TEACHER, where it costs zero kernel runtime
+and is the single best OOF (0.9150). That is the right way to spend xlarge.
+Corollary: ALL remaining LB gain must come from making one 4-fold convnextv2 family
+better — targets, recipe, schedule — not from adding components.
+(cnxxl384_v7 does have all 4 folds on disk: 0.96311/0.96293/0.96005/0.96362.)

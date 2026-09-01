@@ -1003,15 +1003,19 @@ on LB while flat offline, so let v26's result — not this table — close it.
 
 ### FULL YARDSTICK TABLE (K16+TTA on labels_train_30b_v5_aligned)
     family        pooled OOF   gold-58   LB
-    cnxv2l_v7     0.9146       0.9306*   0.949   <- BEST on both
+    cnxv2l_v7     0.9146       0.9283    0.949   <- best OOF, best LB, 5th on gold
     cnxv2l_v9     0.9143       0.9293    probing (v27)
     cnxl384_v11   0.9142       0.9300    probing (v26)
     cnxl384_v13   0.9142       0.9306    not submitted
     cnxl384_v7    0.9137       0.9278    0.947 x2
     cnxl384_v9    0.9134       0.9283    0.948
     cnxxl384_v7   0.9150       —         RUNTIME-LOCKED (best teacher though)
-    (*cnxv2l_v7 gold was still being written at expiry; verify from
-      logs/eval_cnxv2l_v7_yard.log)
+
+**GOLD-58 IS ACTIVELY ANTI-CORRELATED HERE AND MUST NOT BE USED.** cnxv2l_v7 is
+FIRST on OOF and FIRST on LB but only FIFTH on gold (0.9283), while cnxl384_v13 —
+never submitted and on the losing backbone — tops gold at 0.9306. With sigma 0.0125
+on 58 studies that is pure noise, exactly as the 08-30 noise-floor entry warned.
+Rank by yardstick OOF; treat gold as a smoke test for catastrophic breakage only.
 
 ### WEIGHTS DATASET — five families, all globs verified mutually non-matching
     cnxl_f*=v14 seedA(0.947)  cnxlB_f*=seedB(0.947)  cnxl9_f*=v9(0.948)

@@ -832,3 +832,28 @@ NEXT TARGETS GENERATION (v11) = 0.4*v5 + 0.6*(mean-prob of cnxl384_v7 + cnxxl384
 cnxxl384_v7 is the single best teacher (0.9150 > cnxl's 0.9137) even though the
 08-25 entry recorded xlarge as "ties large, 1.7x cost" and shelved it. That verdict
 was offline weak-val — the metric v16 just showed cannot retire a candidate.
+
+### cnxv2l_v9 COMPLETE — convnextv2-large on v9 targets (4 folds, ~9h, bs2+accum2)
+    fold   weak-val   gold      vs cnxl384_v9 (same v9 targets, so weak-val IS comparable)
+    0      0.96202    0.9256    cnxl384_v9 0.96209
+    1      0.96236    0.9285    cnxl384_v9 0.96143
+    2      0.95749    0.9261    cnxl384_v9 0.95791
+    3      0.96250    0.9278    cnxl384_v9 0.96240
+    mean   0.96109    0.9270    cnxl384_v9 0.96096 / gold 0.9254
+Backbone delta +0.00013 weak-val, +0.0016 gold = a TIE on both (gold sigma 0.0125).
+Third independent time convnextv2 has tied convnext_large offline. Whether it is a
+tie on the LB is a separate question — that is what the cnxv2_f* probe answers.
+Checkpoints runs/cnxv2l_v9_f{0-3}.
+
+### v11 lane launched (cnxl384 on the cnxl_v7+cnxxl teacher, ~3h)
+Note the auto-chain (`until pgrep train_series == 0; then run_v11_lane.sh`) did NOT
+fire and left the GPUs idle — launched manually instead. Don't rely on that pattern.
+
+### THREE PROCESS GOTCHAS FROM THIS SESSION (all cost real time)
+1. `kaggle datasets files` paginates at 20 (prints "Next Page Token"). A grep for a
+   late-alphabet name (cnxv2_*, mil_*) finds NOTHING even on a perfect upload, so the
+   documented "poll until files appear" race-check hangs forever / reads as failure.
+   **Always `--page-size 50`.** Cost me a dead poller and a false "upload missing".
+2. Runtime budgeting by MODEL COUNT is wrong — budget by the stub (see the v17 entry).
+3. Judging a pseudo-label iteration by target-delta/correlation is wrong — judge by
+   the TEACHER's yardstick AUC (see the corrected v10 entry).

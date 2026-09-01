@@ -132,7 +132,9 @@ def main() -> None:
 
         eval_net = ema.module if ep >= 1 else model     # EMA needs a warmup epoch
         _, _, _, va_aucs = evaluate(eval_net, dl_va, device)
-        gp, gt, gu, gold_aucs = evaluate(eval_net, dl_gold, device)
+        gold_aucs = {}
+        if len(ds_gold) > 0:
+            gp, gt, gu, gold_aucs = evaluate(eval_net, dl_gold, device)
         va_mean = float(np.mean(list(va_aucs.values())))
         gold_mean = float(np.mean(list(gold_aucs.values()))) if gold_aucs else float("nan")
         print(f"ep{ep}: loss {tot/max(nb,1):.4f} | val-teacher AUC {va_mean:.4f} | "
@@ -149,9 +151,10 @@ def main() -> None:
     ck = torch.load(out / "best.pt", map_location=device, weights_only=False)
     model.load_state_dict(ck["model"])
     vp, vt, vu, va_aucs = evaluate(model, dl_va, device)
-    gp, gt, gu, gold_aucs = evaluate(model, dl_gold, device)
     pd.DataFrame(vp, columns=LABELS).assign(StudyInstanceUID=vu).to_csv(out / "val_preds.csv", index=False)
-    pd.DataFrame(gp, columns=LABELS).assign(StudyInstanceUID=gu).to_csv(out / "gold_preds.csv", index=False)
+    if len(ds_gold) > 0:
+        gp, gt, gu, gold_aucs = evaluate(model, dl_gold, device)
+        pd.DataFrame(gp, columns=LABELS).assign(StudyInstanceUID=gu).to_csv(out / "gold_preds.csv", index=False)
     with open(out / "log.json", "w") as f:
         json.dump(dict(args=vars(args), best_val_auc=ck["val_auc"], history=log), f, indent=2, default=float)
     print(f"DONE fold {args.fold}: best val AUC {ck['val_auc']:.4f} "

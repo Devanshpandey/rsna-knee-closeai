@@ -857,3 +857,25 @@ fire and left the GPUs idle — launched manually instead. Don't rely on that pa
 2. Runtime budgeting by MODEL COUNT is wrong — budget by the stub (see the v17 entry).
 3. Judging a pseudo-label iteration by target-delta/correlation is wrong — judge by
    the TEACHER's yardstick AUC (see the corrected v10 entry).
+
+### v11 COMPLETE — BEST OFFLINE READING OF ANY TARGETS GENERATION
+cnxl384 on v11 targets (teacher = prob-mean of cnxl384_v7 + cnxxl384_v7 OOF, 0.9154).
+All four families re-scored on the SAME v5-aligned yardstick at K16+TTA:
+
+    targets   pooled OOF   gold-58    LB
+    v7        0.9137       0.9278     0.947 (confirmed twice: v14 seedA, v16 seedB)
+    v9        0.9134       0.9283     0.948  <- current best
+    v11       0.9142       0.9300     probing now
+
+v11 leads on BOTH yardsticks (+0.0008 OOF and +0.0017 gold over v9). This is the
+FIRST targets generation to read positive offline rather than flat — every earlier
+one (v6->v7, v7->v9) was a tie offline and still gained on LB. Both deltas remain
+inside their noise bands taken alone, but the direction now agrees with the teacher
+improvement (0.9137 -> 0.9154), which is the causal variable.
+v11 fold weak-vals (on v11 targets, NOT comparable to other generations):
+0.9617 / 0.9613 / 0.9565 / 0.9620. Checkpoints runs/cnxl384_v11_f{0-3}.
+
+Weights dataset naming now: cnxl_f*=v14 seedA, cnxlB_f*=seedB, cnxl9_f*=v9 (LB
+0.948, BEST), cnxv2_f*=convnextv2 on v7, cnxv11_f*=v11. All five globs verified
+mutually non-matching, so any subset can be selected by SERIES_PATTERNS from one
+dataset version with no re-upload and no version race.

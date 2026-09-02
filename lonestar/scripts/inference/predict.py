@@ -23,11 +23,12 @@ LABELS = ["ACL", "MCL", "Medial Meniscus", "Lateral Meniscus", "Medial OA",
 PLANES = {"Sagittal": 0, "Coronal": 1, "Axial": 2}
 
 
-def load_series_volume(series_dir: Path, size: int = 256) -> np.ndarray:
-    """DICOM series -> (n, size, size) uint8, sorted, windowed. Mirrors training preprocessing."""
+def load_series_volume(series_dir: Path, size: int = 256, fov_mm: float = 0) -> np.ndarray:
+    """DICOM series -> (n, size, size) uint8, sorted, optional physical crop, windowed."""
     import cv2
     import pydicom
     slices = []
+    spacing = None
     for f in series_dir.glob("*.dcm"):
         ds = pydicom.dcmread(str(f))
         pos = getattr(ds, "ImagePositionPatient", None)
@@ -39,6 +40,8 @@ def load_series_volume(series_dir: Path, size: int = 256) -> np.ndarray:
         arr = ds.pixel_array.astype(np.float32)
         slope = float(getattr(ds, "RescaleSlope", 1) or 1)
         inter = float(getattr(ds, "RescaleIntercept", 0) or 0)
+        if spacing is None:
+            spacing = getattr(ds, "PixelSpacing", None)
         slices.append((key, inst, arr * slope + inter))
     if not slices:
         raise ValueError(f"empty series {series_dir}")
@@ -52,6 +55,15 @@ def load_series_volume(series_dir: Path, size: int = 256) -> np.ndarray:
         tgt = Counter(s[2].shape for s in slices).most_common(1)[0][0]
         slices = [(a, b, cv2.resize(im, (tgt[1], tgt[0]))) for a, b, im in slices]
     vol = np.stack([s[2] for s in slices])
+    if fov_mm and spacing is not None:
+        try:
+            py, px = float(spacing[0]), float(spacing[1])
+            ch = min(vol.shape[1], max(32, int(round(fov_mm / py))))
+            cw = min(vol.shape[2], max(32, int(round(fov_mm / px))))
+            y0 = (vol.shape[1] - ch) // 2; x0 = (vol.shape[2] - cw) // 2
+            vol = vol[:, y0:y0 + ch, x0:x0 + cw]
+        except (TypeError, ValueError, IndexError):
+            pass
     lo, hi = np.percentile(vol, [1, 99])
     vol = np.clip(vol, lo, hi)
     vol = (vol - lo) / max(hi - lo, 1e-6) * 255.0
@@ -71,9 +83,13 @@ def sample_slices(vol: np.ndarray, k: int, crop: int) -> torch.Tensor:
     return torch.from_numpy((sl - 0.45) / 0.225)
 
 
+DECODE_SIZE = 256
+DECODE_FOV = 0.0
+
+
 def _decode_safe(series_dir):
     try:
-        return load_series_volume(series_dir)
+        return load_series_volume(series_dir, size=DECODE_SIZE, fov_mm=DECODE_FOV)
     except Exception:
         return None
 
@@ -93,10 +109,14 @@ def main() -> None:
     ap.add_argument("--model-src", default=None,
                     help="dir containing model.py (defaults to this file's dir)")
     ap.add_argument("--decode-workers", type=int, default=4)
+    ap.add_argument("--size", type=int, default=256, help="decode resolution (must match training volumes)")
+    ap.add_argument("--fov-mm", type=float, default=0)
     ap.add_argument("--tta", action="store_true", help="average over vertical flip")
     args = ap.parse_args()
 
-    # fork decode workers BEFORE any CUDA init (forking after CUDA is unsafe)
+    global DECODE_SIZE, DECODE_FOV
+    DECODE_SIZE, DECODE_FOV = args.size, args.fov_mm
+    # fork decode workers BEFORE any CUDA init (fork inherits the globals above)
     pool = Pool(args.decode_workers) if args.decode_workers > 1 else None
 
     src = args.model_src or str(Path(__file__).resolve().parent.parent / "training")

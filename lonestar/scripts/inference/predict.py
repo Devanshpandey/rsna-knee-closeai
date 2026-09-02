@@ -84,6 +84,8 @@ def main() -> None:
     ap.add_argument("--series-csv", required=True)
     ap.add_argument("--dicom-root", required=True)
     ap.add_argument("--ckpt-dirs", nargs="+", required=True)
+    ap.add_argument("--ckpt-crops", nargs="+", type=int, default=None,
+                    help="per-dir crop sizes (parallel to --ckpt-dirs); default = --crop for all")
     ap.add_argument("--out", default="submission.csv")
     ap.add_argument("--k-slices", type=int, default=16)
     ap.add_argument("--crop", type=int, default=224)
@@ -105,16 +107,19 @@ def main() -> None:
     cap = torch.cuda.get_device_capability()[0] if device == "cuda" else 0
     amp_dtype = torch.bfloat16 if cap >= 8 else torch.float16
     print(f"device {device} capability {cap} -> autocast {amp_dtype}", flush=True)
+    crops = args.ckpt_crops or [args.crop] * len(args.ckpt_dirs)
+    assert len(crops) == len(args.ckpt_dirs)
     ckpts = []
-    for d in args.ckpt_dirs:
+    for d, cr in zip(args.ckpt_dirs, crops):
         for p in sorted(Path(d).glob("fold*/best.pt")):
             ck = torch.load(p, map_location="cpu", weights_only=False)
             m = KneeStudyModel(ck["backbone"], pretrained=False)
             m.load_state_dict(ck["model"])
             m.eval().to(device)
-            ckpts.append(m)
-            print(f"loaded {p} ({ck['backbone']}, val_auc {ck.get('val_auc', 0):.3f})", flush=True)
+            ckpts.append((m, cr))
+            print(f"loaded {p} ({ck['backbone']}, crop {cr}, val_auc {ck.get('val_auc', 0):.3f})", flush=True)
     assert ckpts, "no checkpoints found"
+    crop_sizes = sorted({cr for _, cr in ckpts})
 
     test = pd.read_csv(args.test_csv)
     series = pd.read_csv(args.series_csv)
@@ -132,7 +137,7 @@ def main() -> None:
             if vol is None:
                 print(f"  skip series {r.SeriesInstanceUID}", flush=True)
                 continue
-            xs.append(sample_slices(vol, args.k_slices, args.crop))
+            xs.append({cr: sample_slices(vol, args.k_slices, cr) for cr in crop_sizes})
             m = np.zeros(5, dtype=np.float32)
             m[PLANES.get(r.Anatomical_Plane, 0)] = 1.0
             m[3] = getattr(r, "Fluid_Sensitive", 0); m[4] = getattr(r, "Fat_Suppression", 0)
@@ -140,13 +145,14 @@ def main() -> None:
         if not xs:  # no decodable series: predict global prior
             rows.append([uid] + [0.5] * len(LABELS))
             continue
-        x = torch.stack(xs)[None].to(device)          # (1, S, K, 3, H, W)
+        xcat = {cr: torch.stack([d[cr] for d in xs])[None].to(device) for cr in crop_sizes}
         meta = torch.from_numpy(np.stack(metas))[None].to(device)
-        mask = torch.ones(1, x.shape[1], device=device)
-        views = [x] + ([torch.flip(x, dims=[-2])] if args.tta else [])
+        mask = torch.ones(1, len(xs), device=device)
         with torch.no_grad(), torch.autocast(device, dtype=amp_dtype, enabled=device == "cuda"):
-            probs = [m_(v, meta, mask).float().sigmoid().cpu().numpy()[0]
-                     for m_ in ckpts for v in views]
+            probs = []
+            for m_, cr in ckpts:
+                views = [xcat[cr]] + ([torch.flip(xcat[cr], dims=[-2])] if args.tta else [])
+                probs += [m_(v, meta, mask).float().sigmoid().cpu().numpy()[0] for v in views]
         rows.append([uid] + list(np.mean(probs, axis=0)))
         if (si + 1) % 50 == 0:
             print(f"{si+1}/{len(test)} studies", flush=True)

@@ -64,3 +64,22 @@ net stack gain unchanged. Recommendation: fold into the gold-conservative FINAL 
 and the learned aggregator; not proposed as a solo LB probe given 3x MIL-neutral reads.
 fastMRI noisy-student lane in progress (10k external knees, pseudo-label pretrain) —
 that's the lane aimed at breaking the 0.947 plateau, ETA first results ~2 days.
+
+## Addendum 4 (2026-09-01) — NOISY-STUDENT BREAKTHROUGH (fastMRI external data)
+Recipe: pseudo-label 10,010 fastMRI knee studies (47,552 series, preprocessed with the
+standard 140mm/384px path) using the 8-ckpt MIL@384 ensemble -> pretrain trunk 4 epochs
+on pseudo-labels -> fine-tune on v7 targets (lr 1e-4, 8 ep).
+
+| family | v7-only | +fastMRI pretrain |
+|---|---|---|
+| MIL effnetv2s@384 | 0.9017 | **0.9198** |
+| MIL seresnext@384 | 0.8970 | **0.9233** |
+
+**NS pair (8 ckpts) gold 0.9265 > v10 pair 0.9254. NS + v10 pair 1:1 = 0.9284 (team best).**
+Largest single-intervention gain measured by either side (+0.018-0.026/family).
+
+@liaoyixu: this should transfer to your lane directly — pseudo-labels in
+shared/labels/fastmri_pseudo_v1.csv (join on StudyInstanceUID; fastMRI knee DICOM
+batches 1+2, your npz pipeline). cnxl/cnxv2l x v9 targets + fastMRI pretrain is the
+obvious 0.95+ candidate. OOF files: oof_mil_ns_{effs,srx}384_nsv1.csv.
+LB probe of the NS pair going out from devansh26 kernel today; seed replicas queued.

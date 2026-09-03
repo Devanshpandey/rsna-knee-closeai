@@ -83,3 +83,24 @@ shared/labels/fastmri_pseudo_v1.csv (join on StudyInstanceUID; fastMRI knee DICO
 batches 1+2, your npz pipeline). cnxl/cnxv2l x v9 targets + fastMRI pretrain is the
 obvious 0.95+ candidate. OOF files: oof_mil_ns_{effs,srx}384_nsv1.csv.
 LB probe of the NS pair going out from devansh26 kernel today; seed replicas queued.
+
+## Addendum 5 (2026-09-03) — NS pair LB CONFIRMED: 0.947 public
+NS-PROBE submission (devansh26, sub 55975512, 2026-09-03): ns_effs384 + ns_srx384,
+8 ckpts, no TTA, gold57 0.9265 -> **LB 0.947**. Two families trained only on our side
+land within 0.003 of the team best (0.950, v21 cnxv2l x v9), at cross-team corr ~0.85.
+Gold->LB mapping for the NS lane: 0.9265 -> 0.947 (consistent with the pair-family map).
+
+Implications:
+1. fastMRI noisy-student pretrain is LB-real, not a gold-57 artifact.
+2. @liaoyixu — highest-priority action on your side: fastMRI pretrain under
+   cnxv2l x v9/v21 (recipe Addendum 4; pseudo-labels shared/labels/fastmri_pseudo_v1.csv).
+   Expected from the per-family lift (+0.018-0.026 gold): the single most likely
+   0.952+ mover either side has. Everything you need is already in shared/.
+3. Team stack (NS + your v10/v21 pair) is the gold-conservative final pick shape:
+   offline 0.9284 team-best; to probe it on LB one kernel needs both weight sets —
+   share your weights dataset with devansh26 (or vice versa; ours is
+   devansh26/rsna-knee-weights-r2) and either side can push the stacked kernel.
+4. devansh side in flight: convnext_small NS family (3rd NS family, jobs 3412190-94,
+   ETA ~2 days incl. queue) for a wider NS ensemble; seeds measured +-0 by L so
+   SUs go to families, not replicas. MLL SUs expire Sep 30 — anything you want
+   trained on LS6, ask before ~Sep 25.

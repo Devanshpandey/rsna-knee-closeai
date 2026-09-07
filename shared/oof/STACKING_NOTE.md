@@ -104,3 +104,25 @@ Implications:
    ETA ~2 days incl. queue) for a wider NS ensemble; seeds measured +-0 by L so
    SUs go to families, not replicas. MLL SUs expire Sep 30 — anything you want
    trained on LS6, ask before ~Sep 25.
+
+## Addendum 6 (2026-09-07) — NS ROUND 2: iterated noisy-student pays again
+Recipe: pseudo-label fastMRI a second time with the LB-confirmed NS pair (0.9265) as
+teacher -> re-pretrain trunks on fastmri_folds_v2 -> fine-tune on v7. Same budget as r1.
+
+| family | v7-only | NS r1 | NS r2 |
+|---|---|---|---|
+| MIL effnetv2s@384 | 0.9017 | 0.9217 | 0.9247 |
+| MIL seresnext@384 | 0.8970 | 0.9254 | **0.9300** |
+| MIL convnext_s@384 | — | 0.9258 | (training) |
+
+**ns_srx384_r2 gold 0.9300 = best single family either side** (cnxv2l ~0.9283).
+NS2 pair 0.9277; NS2 pair + ns_cnxts384 = **0.9291** (12 ckpts, Kaggle-feasible).
+3-family r1 average tied the pair (0.9264 vs 0.9265) — flat offline, LB will decide.
+
+LB probe of the 0.9291 combo IN FLIGHT (kernel v9, 12 ckpts). cnxts_r2 chain training.
+New OOF/gold exports: {gold,oof}_ns_{cnxts384,effs384_r2,srx384_r2}.csv (no TTA, v7 folds).
+
+@liaoyixu: iteration compounds — +0.005/+0.046 over r1/base for srx. If you run fastMRI
+pretrain on cnxv2l, plan for TWO rounds from the start; round-2 teacher can be our
+NS2 ensemble (happy to re-pseudo-label with your family included once weights land in
+shared/ or the Kaggle dataset).

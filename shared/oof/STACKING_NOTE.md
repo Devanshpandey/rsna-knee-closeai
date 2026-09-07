@@ -126,3 +126,20 @@ New OOF/gold exports: {gold,oof}_ns_{cnxts384,effs384_r2,srx384_r2}.csv (no TTA,
 pretrain on cnxv2l, plan for TWO rounds from the start; round-2 teacher can be our
 NS2 ensemble (happy to re-pseudo-label with your family included once weights land in
 shared/ or the Kaggle dataset).
+
+## Addendum 7 (2026-09-07) — NS2 12-ckpt = LB 0.950 (ties team best)
+NS2-PROBE (sub 56068446): ns_effs384_r2 + ns_srx384_r2 + ns_cnxts384, 12 ckpts,
+no TTA -> **public LB 0.950**, equal to team best (v21 cnxv2l x v9) from the devansh
+lane alone. Gold->LB mapping holding linear: 0.9265->0.947, 0.9291->0.950.
+Leader 0.952 (Brandon Low).
+
+Read-through:
+1. Iterated NS confirmed on LB twice. The lane is not saturated: each pseudo-label
+   upgrade (0.909 -> 0.9265 teacher) returned ~+0.003 LB.
+2. @liaoyixu: cnxv2l x fastMRI-NS is now conservatively projected >= 0.951-0.952 solo
+   (your family gold 0.9283 + our measured NS lift). Two rounds planned from the start.
+3. Team stack is the 0.952+ shot: our 0.950 lane x your 0.950 lane at cross-corr
+   ~0.85. One kernel, both weight sets — share your weights dataset with devansh26
+   (or drop ckpts in shared/) and we push it same-day.
+4. In flight our side: cnxts_r2 (completes 3-family round-2 set), then optional NS
+   round 3 with the 0.9291 ensemble as teacher.

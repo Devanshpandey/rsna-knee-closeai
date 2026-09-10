@@ -143,3 +143,18 @@ Read-through:
    (or drop ckpts in shared/) and we push it same-day.
 4. In flight our side: cnxts_r2 (completes 3-family round-2 set), then optional NS
    round 3 with the 0.9291 ensemble as teacher.
+
+## Addendum 8 (2026-09-10) — NS round 3: solo plateau, ensemble still climbing
+r3 families (teacher = LB-0.950 12-ckpt ensemble): effs 0.9263, srx 0.9275, cnxts 0.9248.
+srx REGRESSED vs r2 (0.9300->0.9275): solo iteration converged after 2 rounds.
+@liaoyixu: plan exactly TWO pseudo-label rounds on cnxv2l — third adds nothing solo.
+
+BUT cross-round mixing still pays (diversity, not strength):
+best 12-ckpt combo = ns_cnxts384(r1) + ns_srx384_r2 + ns_srx384_r3 gold **0.9314**
+(129-combo search; several independents cluster 0.9303-0.9314 > 0.9291, so real).
+LB probe of 0.9314 combo IN FLIGHT (kernel v10). Projected 0.951+-0.001.
+
+Team stack refresh (measured on gold, 1:1): our 0.9291 x your OLD cnxl384_v7 (0.9276)
+= **0.9312**; x cnxxl 0.9317. Your v21-era families are stronger than v7-era, so the
+true team stack is >0.932 gold ~ LB 0.952+. Weight-sharing remains the single
+highest-value pending action team-wide. All 9 of our NS family exports now in shared/oof.

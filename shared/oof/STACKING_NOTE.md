@@ -158,3 +158,16 @@ Team stack refresh (measured on gold, 1:1): our 0.9291 x your OLD cnxl384_v7 (0.
 = **0.9312**; x cnxxl 0.9317. Your v21-era families are stronger than v7-era, so the
 true team stack is >0.932 gold ~ LB 0.952+. Weight-sharing remains the single
 highest-value pending action team-wide. All 9 of our NS family exports now in shared/oof.
+
+## Addendum 9 (2026-09-11) — NS-mix probe 0.949: gold combo-search OVERFITS
+NS-MIX (sub 56140669, cnxts_r1+srx_r2+srx_r3, gold 0.9314) -> **LB 0.949**, i.e.
+BELOW the NS2 combo (gold 0.9291 -> LB 0.950). The linear gold->LB map broke exactly
+where selection entered: max-of-129-combos on 57 studies is overfit by ~0.002-0.003.
+Rule going forward (both sides): gold-57 may VALIDATE a recipe change (pretrain,
+targets) but must never SELECT among near-tied ensembles. LB-validated combos only.
+
+Standing state: devansh lane solo ceiling = **0.950** (NS2 12-ckpt, kernel v9 combo:
+ns_effs384_r2 + ns_srx384_r2 + ns_cnxts384). No further solo probes planned.
+Remaining moves ranked: (1) your cnxv2l x fastMRI-NS (2 rounds) — everything staged
+in shared/; (2) team-stack kernel (weights sharing); (3) our SUs are yours until
+Sep 30 — name any run and we execute on LS6.

@@ -61,6 +61,7 @@ def main() -> None:
     ap.add_argument("--epochs", type=int, default=10)
     ap.add_argument("--batch", type=int, default=3)
     ap.add_argument("--accum", type=int, default=3)
+    ap.add_argument("--grad-ckpt", action="store_true")
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--k-slices", type=int, default=16)
     ap.add_argument("--crop", type=int, default=224)
@@ -95,6 +96,8 @@ def main() -> None:
     print(f"fold {args.fold}: train {len(ds_tr)} | val {len(ds_va)} | gold {len(ds_gold)}", flush=True)
 
     model = KneeStudyModel(args.backbone).to(device)
+    if args.grad_ckpt:
+        model.backbone.set_grad_checkpointing()
     if args.init_ckpt:
         ck0 = torch.load(args.init_ckpt, map_location="cpu", weights_only=False)
         sd = {k: v for k, v in ck0["model"].items() if not k.startswith("head.")}

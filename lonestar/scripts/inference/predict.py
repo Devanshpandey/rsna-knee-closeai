@@ -126,7 +126,8 @@ def main() -> None:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     cap = torch.cuda.get_device_capability()[0] if device == "cuda" else 0
     amp_dtype = torch.bfloat16 if cap >= 8 else torch.float16
-    print(f"device {device} capability {cap} -> autocast {amp_dtype}", flush=True)
+    devs = [f"cuda:{i}" for i in range(torch.cuda.device_count())] if device == "cuda" else ["cpu"]
+    print(f"device {device} x{len(devs)} capability {cap} -> autocast {amp_dtype}", flush=True)
     crops = args.ckpt_crops or [args.crop] * len(args.ckpt_dirs)
     assert len(crops) == len(args.ckpt_dirs)
     ckpts = []
@@ -135,11 +136,15 @@ def main() -> None:
             ck = torch.load(p, map_location="cpu", weights_only=False)
             m = KneeStudyModel(ck["backbone"], pretrained=False)
             m.load_state_dict(ck["model"])
-            m.eval().to(device)
-            ckpts.append((m, cr))
-            print(f"loaded {p} ({ck['backbone']}, crop {cr}, val_auc {ck.get('val_auc', 0):.3f})", flush=True)
+            dv = devs[len(ckpts) % len(devs)]
+            m.eval().to(dv)
+            ckpts.append((m, cr, dv))
+            print(f"loaded {p} ({ck['backbone']}, crop {cr}, dev {dv}, val_auc {ck.get('val_auc', 0):.3f})", flush=True)
     assert ckpts, "no checkpoints found"
-    crop_sizes = sorted({cr for _, cr in ckpts})
+    crop_sizes = sorted({cr for _, cr, _ in ckpts})
+    ckpts_by_dev = {dv: [c for c in ckpts if c[2] == dv] for dv in devs if any(c[2] == dv for c in ckpts)}
+    from concurrent.futures import ThreadPoolExecutor
+    executor = ThreadPoolExecutor(len(ckpts_by_dev)) if len(ckpts_by_dev) > 1 else None
 
     test = pd.read_csv(args.test_csv)
     series = pd.read_csv(args.series_csv)
@@ -165,14 +170,25 @@ def main() -> None:
         if not xs:  # no decodable series: predict global prior
             rows.append([uid] + [0.5] * len(LABELS))
             continue
-        xcat = {cr: torch.stack([d[cr] for d in xs])[None].to(device) for cr in crop_sizes}
-        meta = torch.from_numpy(np.stack(metas))[None].to(device)
-        mask = torch.ones(1, len(xs), device=device)
-        with torch.no_grad(), torch.autocast(device, dtype=amp_dtype, enabled=device == "cuda"):
-            probs = []
-            for m_, cr in ckpts:
-                views = [xcat[cr]] + ([torch.flip(xcat[cr], dims=[-2])] if args.tta else [])
-                probs += [m_(v, meta, mask).float().sigmoid().cpu().numpy()[0] for v in views]
+        xcat_cpu = {cr: torch.stack([d[cr] for d in xs])[None] for cr in crop_sizes}
+        meta_cpu = torch.from_numpy(np.stack(metas))[None]
+
+        def run_dev(dv):
+            xcat = {cr: x.to(dv) for cr, x in xcat_cpu.items()}
+            meta = meta_cpu.to(dv)
+            mask = torch.ones(1, len(xs), device=dv)
+            out = []
+            with torch.no_grad(), torch.autocast("cuda" if dv != "cpu" else "cpu",
+                                                 dtype=amp_dtype, enabled=dv != "cpu"):
+                for m_, cr, _ in ckpts_by_dev[dv]:
+                    views = [xcat[cr]] + ([torch.flip(xcat[cr], dims=[-2])] if args.tta else [])
+                    out += [m_(v, meta, mask).float().sigmoid().cpu().numpy()[0] for v in views]
+            return out
+
+        if executor is not None:
+            probs = [p for chunk in executor.map(run_dev, list(ckpts_by_dev)) for p in chunk]
+        else:
+            probs = run_dev(next(iter(ckpts_by_dev)))
         rows.append([uid] + list(np.mean(probs, axis=0)))
         if (si + 1) % 50 == 0:
             print(f"{si+1}/{len(test)} studies", flush=True)

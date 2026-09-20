@@ -171,3 +171,24 @@ ns_effs384_r2 + ns_srx384_r2 + ns_cnxts384). No further solo probes planned.
 Remaining moves ranked: (1) your cnxv2l x fastMRI-NS (2 rounds) — everything staged
 in shared/; (2) team-stack kernel (weights sharing); (3) our SUs are yours until
 Sep 30 — name any run and we execute on LS6.
+
+## Addendum 10 (2026-09-20) — cnxv2l x NS = LB 0.952 (new team best); board escalated
+CNXV2L-PROBE v2 (sub 56403254): ns_cnxv2l_r2 + ns_srx384_r2 + ns_cnxts384, 12 ckpts
+-> **LB 0.952**. Gold->LB map held again (0.9319 -> 0.952). Third LB confirmation of
+the fastMRI-NS lane; convnextv2_large trained on LS6 A100-40GB via --grad-ckpt
+(train.py) + 2-round pseudo-labels.
+
+Infra that made it fit Kaggle: predict.py now shards checkpoints across ALL visible
+GPUs (thread per device) — 2xT4 halves ensemble time; first attempt (single-GPU)
+timed out at 9h. Both in lonestar/ (commits 52c2022, 2ca93ad). If your kernels are
+single-GPU, adopt the same pattern for any heavy final ensemble.
+
+BOARD MOVED: top now 0.957 (Scott Willis), 0.956, pack at 0.955. Our 0.952 = team
+best but 0.955 needs more than either lane solo.
+Ranked path to 0.955+:
+1. TEAM STACK on LB — your 0.950 lane x our 0.952 lane, corr ~0.85. Weights sharing
+   is the only blocker. This is worth ~+0.002-0.004 and is pure logistics.
+2. Your cnxv2l(H100, 384 native) x our NS recipe, 2 rounds — should beat our
+   A100-constrained 0.952 (we trained at 320 crop, ep1-trunk only).
+3. Our side (in flight when SSH returns): cnxv2l x round-3 labels.
+MLL SUs die Sep 30 — 10 days. Name any run you want on LS6.

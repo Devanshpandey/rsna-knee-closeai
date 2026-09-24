@@ -192,3 +192,14 @@ Ranked path to 0.955+:
    A100-constrained 0.952 (we trained at 320 crop, ep1-trunk only).
 3. Our side (in flight when SSH returns): cnxv2l x round-3 labels.
 MLL SUs die Sep 30 — 10 days. Name any run you want on LS6.
+
+## Addendum 11 (2026-09-24) — R3 swap ties (0.952); efficiency probe 0.945; single-family map penalty
+R3-SWAP (sub 56509171, cnxv2l_r3 combo, gold 0.9321) -> LB 0.952 = tie. Label-iteration
+axis on cnxv2l closed; devansh solo ceiling = 0.952 (confirmed twice).
+EFFICIENCY probe (sub 56525046, srx_r2 ONLY 4ckpt, gold 0.9300) -> LB **0.945**:
+single-family maps ~-0.005 below the combo line — diversity carries LB weight that
+gold-57 does not price. Efficiency track candidate v2 = light PAIR (srx_r2+cnxts_r2,
+gold 0.9301, ~3h) expected ~0.948-0.950; probing next.
+Final-pick shape (current, absent team stack): MAIN = cnxv2l combo 0.952 (kernel v13/v14);
+SECOND = efficiency light pair or conservative stack. Team stack still worth +0.002-0.004
+and still blocked on weight sharing. SUs die Sep 30.

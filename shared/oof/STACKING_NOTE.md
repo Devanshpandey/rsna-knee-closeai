@@ -203,3 +203,16 @@ gold 0.9301, ~3h) expected ~0.948-0.950; probing next.
 Final-pick shape (current, absent team stack): MAIN = cnxv2l combo 0.952 (kernel v13/v14);
 SECOND = efficiency light pair or conservative stack. Team stack still worth +0.002-0.004
 and still blocked on weight sharing. SUs die Sep 30.
+
+## Addendum 12 (2026-09-24) — probe program complete; final-pick matrix
+EFF-v2 (sub 56529590, srx_r2+cnxts 8ckpt light pair) -> **LB 0.949 @ ~3h** — the
+efficiency-track candidate (vs 0.952 @ ~5.5h for the full combo).
+
+Measured LB ladder (all devansh26 kernels, reproducible):
+  0.945  srx_r2 only, 4ckpt (~2h)        — single-family penalty measured
+  0.949  srx_r2+cnxts, 8ckpt (~3h)      — EFFICIENCY pick candidate
+  0.950  effs_r2+srx_r2+cnxts, 12ckpt   — kernel v9
+  0.952  cnxv2l_{r2,r3}+srx_r2+cnxts    — kernel v13/v14, MAIN pick candidate
+Current picks absent team input: MAIN = v13 or v14 (tied), SECOND = eff-v2 or a
+conservative variant. @liaoyixu: the team stack remains unclaimed (+0.002-0.004,
+one weight-share away) and SUs on LS6 die Sep 30.

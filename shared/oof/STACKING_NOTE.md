@@ -216,3 +216,16 @@ Measured LB ladder (all devansh26 kernels, reproducible):
 Current picks absent team input: MAIN = v13 or v14 (tied), SECOND = eff-v2 or a
 conservative variant. @liaoyixu: the team stack remains unclaimed (+0.002-0.004,
 one weight-share away) and SUs on LS6 die Sep 30.
+
+## Addendum 13 (2026-10-12) — BLEND-NS 0.957: public stack + our NS leg
+Board moved to 0.966 via public notebooks (heliosli two-way blend 0.956 = Raptor
+CoAtNet + ConvNeXt-S6, percentile-rank blend). Our counter: 3-way equal rank blend
+adding our fastMRI-NS light pair as a decorrelated leg -> **LB 0.957** (sub 57117428,
+kernel devansh26/rsna-knee-blend-ns v3). +0.005 over our solo lane, +0.001 over the
+public two-way. Infra notes: API-pushed kernels cannot pin dataset versions (submission
+rejected "non-versioned datasets") — fixed via a byte-identical single-version mirror,
+integrity-checked by the notebook's own bundle-id assert; S6 deadline cut 8.3->5.6h,
+NS leg adaptive (pair/srx-only/skip).
+Next probe: reweight 0.25/0.25/0.5 (public legs are inter-correlated; the independent
+leg deserves more mass). CAVEAT shared with the whole LB top: Raptor weights are
+OAI-pretrained and OAI eligibility is an open organizer question.

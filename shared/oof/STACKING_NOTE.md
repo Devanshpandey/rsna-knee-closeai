@@ -229,3 +229,14 @@ NS leg adaptive (pair/srx-only/skip).
 Next probe: reweight 0.25/0.25/0.5 (public legs are inter-correlated; the independent
 leg deserves more mass). CAVEAT shared with the whole LB top: Raptor weights are
 OAI-pretrained and OAI eligibility is an open organizer question.
+
+## Addendum 14 (2026-10-16) — 4-leg NEGATIVE (0.955); final-pick recommendation
+Adding the public CoAtNet-224 ("0945") as a 4th leg (weights .2/.2/.2/.4) scored
+**0.955 < 0.957**: weak + same-lineage-as-Raptor leg dilutes. Do not add correlated
+weak legs to rank blends. 3-leg BLEND-NS (raptor+S6+our NS, LB 0.957) is final-pick #1.
+
+FINAL PICKS (recommend selecting in Kaggle UI before Oct 22):
+1. BLEND-NS 3-leg, sub 57117428 (kernel rsna-knee-blend-ns v3) — LB 0.957.
+2. CNXV2L pure-own, sub 56403254 (kernel rsna-knee-r2-inference v13) — LB 0.952.
+   Hedge: survives any OAI-eligibility ruling (fastMRI is unambiguous open data).
+Ladder for the writeup: solo 0.945/0.949/0.950/0.952; blends 0.955(4-leg)/0.957(3-leg x2).
